@@ -1,0 +1,53 @@
+.sidebar {
+  width: 240px;
+  background-color: #f5f3ff;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.signin {
+  background-color: #f0f0f0;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  width: 100%;
+  text-align: left;
+  border: none;
+}
+
+.register {
+  background-color: #e0e0e0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  width: 100%;
+  text-align: left;
+  border: none;
+}
+
+.bottomButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.save {
+  background-color: #7c3aed;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+}
+
+.cancel {
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 8px 16px;
+  border-radius: 6px;
+}
