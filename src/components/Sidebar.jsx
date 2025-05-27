@@ -1,5 +1,5 @@
 import styles from "./Sidebar.module.css";
-import logo from "../assets/logoMain.jpg";
+import logo from "../assets/Logo.jpg";
 
 export default function Sidebar() {
   return (

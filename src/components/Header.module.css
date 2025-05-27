@@ -11,17 +11,9 @@
 .input {
   font-size: 18px;
   width: 100%;
-  max-width: 1400px; /* 넓어짐 */
+  max-width: 1600px; /* 넓어짐 */
   padding: 14px 20px;
   border-radius: 10px;
   border: 1px solid #ccc;
 }
 
-.close {
-  font-size: 28px;
-  background: none;
-  border: none;
-  color: #888;
-  margin-left: 24px;
-  cursor: pointer;
-}

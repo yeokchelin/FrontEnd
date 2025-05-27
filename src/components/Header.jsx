@@ -8,7 +8,6 @@ export default function Header() {
         placeholder="새로운 맛을 찾아 떠나볼까요?"
         className={styles.input}
       />
-      <button className={styles.close}>&times;</button>
     </header>
   );
 }
