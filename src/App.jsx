@@ -21,7 +21,7 @@ function App() {
         flexDirection: "column",
         minWidth: 0,                  // flexbox shrink-safe
       }}>
-        <Header />
+        <Header onSearchSelect={setSelectedStation} />
         <main style={{
           flex: 1,
           overflow: "auto",
