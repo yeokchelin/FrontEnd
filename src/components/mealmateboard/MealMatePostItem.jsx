@@ -1,55 +1,51 @@
 // src/components/mealmateboard/MealMatePostItem.jsx
 import React from 'react';
-import './MealMatePostItem.css'; // 이 컴포넌트의 스타일 파일
+import './MealMatePostItem.css'; // 개별 게시글 스타일
 
 const MealMatePostItem = ({ postItem }) => {
-  // ISO 문자열을 읽기 쉬운 날짜/시간 형식으로 변환
-  const formatDateTime = (isoString) => {
-    const date = new Date(isoString);
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false // 24시간 형식
-    });
-  };
+  // postItem이 없는 경우를 대비 (이론적으로는 List에서 처리하지만 방어 코드)
+  if (!postItem) {
+    return null;
+  }
 
-  // 모집 상태에 따라 다른 클래스 적용 (CSS에서 색상 정의)
-  const statusClass = `status-${postItem.status.replace(/\s/g, '').toLowerCase()}`;
+  const {
+    title,
+    authorName,
+    meetingStation,
+    meetingTime,
+    content,
+    status,
+    partySize,
+    genderPreference,
+    createdAt
+  } = postItem;
+
+  // 상태에 따른 클래스 부여 (예: '모집 중'은 초록색, '모집 완료'는 회색)
+  const statusClass = status === '모집 중' ? 'status-recruiting' : 'status-completed';
 
   return (
-    <div className="mealmate-post-item"> {/* 클래스명 변경됨 */}
+    <div className="mealmate-post-item">
       <div className="post-header">
-        <h3 className="post-title">{postItem.title}</h3>
-        <span className={`post-status ${statusClass}`}>
-          {postItem.status}
-        </span>
+        <h3 className="post-title">{title}</h3>
+        <span className={`post-status ${statusClass}`}>{status}</span>
       </div>
-      <div className="post-details">
-        <p>
-          <span className="detail-label">역:</span> {postItem.meetingStation}
-        </p>
-        <p>
-          <span className="detail-label">시간:</span> {postItem.meetingTime}
-        </p>
-        <p>
-          <span className="detail-label">인원:</span> {postItem.partySize}명
-        </p>
-        {postItem.genderPreference && postItem.genderPreference !== '무관' && ( // '무관'일 경우 표시 안 함
-          <p>
-            <span className="detail-label">성별:</span> {postItem.genderPreference}
-          </p>
-        )}
+      <div className="post-meta">
+        <span className="author-name"><strong>작성자:</strong> {authorName}</span>
+        <span className="created-at"><strong>작성일:</strong> {new Date(createdAt).toLocaleDateString()}</span>
       </div>
-      <p className="post-content">{postItem.content}</p>
-      <div className="post-footer">
-        <span className="post-author">{postItem.authorName}</span>
-        <span className="post-date">{formatDateTime(postItem.createdAt)}</span>
+      <div className="meeting-info">
+        <p><strong><i className="icon-station"></i> 만날 역:</strong> {meetingStation}</p>
+        <p><strong><i className="icon-time"></i> 만날 시간:</strong> {meetingTime}</p>
+        <p><strong><i className="icon-group"></i> 모집 인원:</strong> {partySize}명</p>
+        <p><strong><i className="icon-gender"></i> 선호 성별:</strong> {genderPreference}</p>
       </div>
+      <div className="post-content">
+        <p>{content}</p>
+      </div>
+      {/* 상세 보기 버튼 등 추가 가능 */}
+      {/* <button className="details-button">상세 보기</button> */}
     </div>
   );
 };
 
-export default MealMatePostItem; // 컴포넌트명 변경됨
+export default MealMatePostItem;
