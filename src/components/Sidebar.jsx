@@ -1,10 +1,11 @@
 import styles from "./Sidebar.module.css";
+import logo from "../assets/logo_main.jpg";
 
 export default function Sidebar() {
   return (
     <aside className={styles.sidebar}>
       <div>
-        <h2 className={styles.title}>Side Bar</h2>
+        <h2 className={styles.title}><img src={logo} alt="logoMain" className={styles.image} /></h2>
         <button className={styles.signin}>Sign in</button>
         <button className={styles.register}>Register</button>
       </div>
