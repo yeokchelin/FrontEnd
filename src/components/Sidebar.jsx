@@ -3,16 +3,20 @@ import logo from "../assets/logo_main.jpg";
 
 export default function Sidebar() {
   return (
-    <aside className={styles.sidebar}>
-      <div>
+    <aside className={styles.sideBar}>
+      <div className={styles.sideMenu}>
         <h2 className={styles.title}><img src={logo} alt="logoMain" className={styles.image} /></h2>
-        <button className={styles.signin}>Sign in</button>
-        <button className={styles.register}>Register</button>
+        <div className={styles.userContainer}>
+          <button className={styles.signIn}>로그인</button>
+          <button className={styles.register}>회원가입</button>
+        </div>
+        <hr/>
+        <button className={styles.board}>게시판</button>
       </div>
-      <div className={styles.bottomButtons}>
+      {/* <div className={styles.bottomButtons}>
         <button className={styles.save}>Save</button>
         <button className={styles.cancel}>Cancel</button>
-      </div>
+      </div> */}
     </aside>
   );
 }
