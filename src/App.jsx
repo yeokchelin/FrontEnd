@@ -1,8 +1,8 @@
 import { useState } from "react";
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
-import MetroMap from "./components/MetroMap";
-import StationInfo from "./components/StationInfo";
+import Sidebar from "./components/mainPage/Sidebar";
+import Header from "./components/mainPage/Header";
+import MetroMap from "./components/mainPage/MetroMap";
+import StationInfo from "./components/mainPage/StationInfo";
 
 function App() {
   const [selectedStation, setSelectedStation] = useState(null);

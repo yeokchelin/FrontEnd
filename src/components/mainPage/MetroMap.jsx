@@ -1,4 +1,4 @@
-import { mainLineStations, seongsuBranch, sinjeongBranch } from "../data/stationLine2";
+import { mainLineStations, seongsuBranch, sinjeongBranch } from "../../data/stationLine2";
 
 export default function MetroMap({  onSelect }) {
   const allStations = [...mainLineStations, ...seongsuBranch.slice(1), ...sinjeongBranch.slice(1)];

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import styles from "./Header.module.css";
-import { mainLineStations, seongsuBranch, sinjeongBranch } from "../data/stationLine2";
+import { mainLineStations, seongsuBranch, sinjeongBranch } from "../../data/stationLine2";
 import StationInfo from "./StationInfo";
 
 export default function Header({ onSearchSelect }) {
