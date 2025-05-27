@@ -1,3 +1,6 @@
+/* src/App.css (기존 내용은 모두 주석 처리하거나 삭제) */
+
+/*
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -39,4 +42,50 @@
 
 .read-the-docs {
   color: #888;
+}
+*/
+
+
+/* --- App.css: 게시판 테스트 및 다크 모드용 최소 스타일 --- */
+
+/* 전역 기본 스타일 */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #fff; /* 기본 라이트 모드 배경 */
+  color: #333; /* 기본 라이트 모드 텍스트 색상 */
+  transition: background-color 0.3s ease, color 0.3s ease; /* 다크 모드 전환 애니메이션 */
+}
+
+/* 다크 모드일 때 body 스타일 변경 */
+.dark-mode { /* 최상위 div에 dark-mode 클래스가 적용된다고 가정 */
+  /* body 태그에 직접 적용될 경우 */
+  & body {
+    background-color: #1e1e1e; /* 다크 모드 배경 */
+    color: #eee; /* 다크 모드 텍스트 색상 */
+  }
+  /* 또는 App 컴포넌트의 최상위 div에 dark-mode 클래스가 적용될 경우 */
+  /* .dark-mode 자체의 스타일 */
+  background-color: #1e1e1e; 
+  color: #eee;
+}
+
+
+/* main 태그의 배경색을 App.css에서 관리 */
+.main-content-light {
+  background: #f0f2f5; /* 라이트 모드 메인 배경 */
+}
+
+.dark-mode .main-content-dark {
+  background: #1a1a1a; /* 다크 모드 메인 배경 */
+}
+
+/* 기타 필요한 전역 스타일 */
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
 }
