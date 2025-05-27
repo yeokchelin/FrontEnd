@@ -1,5 +1,8 @@
 .sidebar {
   width: 300px;
+  max-width: 100vw;         /* 화면 크기 초과하지 않도록 */
+  height: 100vh;
+  box-sizing: border-box;
   background-color: #f5f3ff;
   padding: 24px;
   display: flex;
@@ -21,7 +24,8 @@
 }
 
 .logo {
-  height: 180px;       /* 직접 높이 지정 */
+  height: 150px;  
+  max-width: 100vw;
   width: auto;
   object-fit: contain;
 }
