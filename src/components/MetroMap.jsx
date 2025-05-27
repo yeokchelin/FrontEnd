@@ -43,7 +43,6 @@ export default function MetroMap({  onSelect }) {
     { name: "이대", code: "ewha", x: 460, y: 280 },
     { name: "아현", code: "ahyeon", x: 460, y: 240 },
     { name: "충정로", code: "chungjeongno", x: 460, y: 200 },
-    { name: "시청", code: "cityhall", x: 530, y: 200 }
   ];
 
   const seongsuBranch = [
