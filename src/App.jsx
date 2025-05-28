@@ -1,24 +1,75 @@
 // src/App.jsx
 import { useState } from "react";
-import Sidebar from "./components/main/Sidebar";     // 경로는 이미 수정된 것으로 가정
-import Header from "./components/main/Header";       // 경로는 이미 수정된 것으로 가정
-import MetroMap from "./components/main/MetroMap";   // 경로는 이미 수정된 것으로 가정
-import StationInfo from "./components/main/StationInfo"; // 경로는 이미 수정된 것으로 가정
+import Sidebar from "./components/main/Sidebar";
+import Header from "./components/main/Header";
+import MetroMap from "./components/main/MetroMap";
+import StationInfo from "./components/main/StationInfo";
 
-// ❗️ PollTestPage 임포트 추가 (경로는 실제 파일 위치에 맞게 조정해주세요)
-import PollTestPage from './pages/test/PollTestPage'; 
+// 테스트할 페이지들 임포트
+import PollTestPage from './pages/test/PollTestPage';
+import StoreManagementPage from './pages/storemanagement/StoreManagementPage';
+import ReviewPage from './pages/review/ReviewPage';
+
+// ❗️ BoardPage 임포트는 더 이상 필요 없을 수 있습니다 (아래 설명 참고).
+// import BoardPage from "./pages/board/BoardPage"; 
+import FreeBoardPage from "./pages/board/FreeBoardPage";     // ❗️ 자유게시판 페이지
+import MealMateBoardPage from "./pages/board/MealMateBoardPage"; // ❗️ 밥친구게시판 페이지
+
 
 function App() {
   const [selectedStation, setSelectedStation] = useState(null);
-  // ❗️ PollTestPage 표시 여부를 위한 상태 추가
-  const [showPollTestPage, setShowPollTestPage] = useState(false);
+  const [showTestMenu, setShowTestMenu] = useState(false);
+  const [activeTestPage, setActiveTestPage] = useState('metro'); // 초기값을 'metro'로 명시
 
-  // ❗️ 테스트 페이지 표시/숨김 토글 함수
-  const togglePollTestPage = () => {
-    setShowPollTestPage(prevShow => !prevShow);
-    // 테스트 페이지로 전환 시 선택된 역 정보 초기화 (선택 사항)
-    if (!showPollTestPage) { // 즉,これから PollTestPage를 보여줄 것이라면
-        setSelectedStation(null);
+  const handleMainTestButtonClick = () => {
+    if (activeTestPage && activeTestPage !== 'metro') {
+      setActiveTestPage('metro');
+      setShowTestMenu(false);
+    } else {
+      setShowTestMenu(prevShow => !prevShow);
+    }
+  };
+
+  const selectTestPage = (pageName) => {
+    setActiveTestPage(pageName);
+    setShowTestMenu(false);
+    if (pageName !== 'metro') {
+      setSelectedStation(null);
+    }
+  };
+
+  const renderActivePageContent = () => {
+    switch (activeTestPage) {
+      case 'poll':
+        return <PollTestPage />;
+      case 'store':
+        return <StoreManagementPage />;
+      case 'review':
+        return <ReviewPage />;
+      case 'freeboard': // ❗️ FreeBoardPage 직접 렌더링
+        return <FreeBoardPage />;
+      case 'mealmateboard': // ❗️ MealMateBoardPage 직접 렌더링
+        return <MealMateBoardPage />;
+      case 'metro': // 명시적으로 metro 상태
+      default:
+        return (
+          <>
+            <MetroMap selected={selectedStation} onSelect={setSelectedStation} />
+            {selectedStation && (
+              <div style={{
+                marginTop: "20px",
+                width: "100%",
+                maxWidth: "900px",
+                backgroundColor: "var(--background-color)",
+                padding: '20px',
+                borderRadius: '8px',
+                border: '1px solid var(--header-border-color)'
+              }}>
+                <StationInfo station={selectedStation} />
+              </div>
+            )}
+          </>
+        );
     }
   };
 
@@ -29,23 +80,40 @@ function App() {
       width: "100vw",
       overflow: "hidden",
     }}>
-      <Sidebar />
+      <Sidebar onNavigate={selectTestPage} currentView={activeTestPage} />
       <div style={{
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        minWidth: 0,                  // flexbox shrink-safe
+        minWidth: 0,
       }}>
-        <Header onSearchSelect={setSelectedStation} />
-        
-        {/* ❗️ 테스트 페이지 토글 버튼 (임시 위치 및 스타일) */}
-        <div style={{ padding: '10px', textAlign: 'center', background: '#e9ecef', borderBottom: '1px solid #ddd' }}>
-          <button 
-            onClick={togglePollTestPage} 
-            style={{ padding: '8px 15px', fontSize: '1em', cursor: 'pointer' }}
+        <Header />
+        <div style={{
+          padding: '10px',
+          textAlign: 'center',
+          backgroundColor: 'var(--header-bg-color)',
+          borderBottom: '1px solid var(--header-border-color)'
+        }}>
+          <button
+            onClick={handleMainTestButtonClick}
+            style={{ /* 기존 버튼 스타일 */ }}
           >
-            {showPollTestPage ? "지하철 노선도 앱으로 돌아가기" : "투표 기능 테스트 페이지 보기"}
+            {(activeTestPage && activeTestPage !== 'metro') ? "지하철 노선도 보기" : (showTestMenu ? "테스트 메뉴 닫기" : "테스트 페이지 메뉴 열기")}
           </button>
+
+          {showTestMenu && (!activeTestPage || activeTestPage === 'metro') && (
+            <div className="test-page-submenu" style={{ /* 기존 서브메뉴 스타일 */ }}>
+              <button onClick={() => selectTestPage('poll')} style={{ /* 기존 버튼 스타일 */}}>
+                투표 기능 테스트
+              </button>
+              <button onClick={() => selectTestPage('store')} style={{ /* 기존 버튼 스타일 */}}>
+                가게 관리 테스트
+              </button>
+              <button onClick={() => selectTestPage('review')} style={{ /* 기존 버튼 스타일 */}}>
+                리뷰 페이지 테스트
+              </button>
+            </div>
+          )}
         </div>
 
         <main style={{
@@ -53,22 +121,12 @@ function App() {
           overflow: "auto",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center", // PollTestPage도 중앙 정렬될 수 있음, 필요시 조정
-          // background: "#fff", // PollTestPage 배경과 겹칠 수 있으므로, PollTestPage에서 자체 배경 관리
+          // alignItems: "center", // 각 페이지가 전체 너비를 사용하도록 하려면 이 줄 주석 처리 또는 변경
+          paddingTop: (activeTestPage && activeTestPage !== 'metro') ? '20px' : '0',
+          paddingLeft: (activeTestPage && activeTestPage !== 'metro') ? '20px' : '0', // 전체적인 패딩은 각 페이지에서 관리하거나 여기서 일괄 적용
+          paddingRight: (activeTestPage && activeTestPage !== 'metro') ? '20px' : '0',
         }}>
-          {/* ❗️ 조건부 렌더링: showPollTestPage 상태에 따라 다른 내용을 표시 */}
-          {showPollTestPage ? (
-            <PollTestPage />
-          ) : (
-            <> {/* 기존 지하철 노선도 앱 내용 */}
-              <MetroMap selected={selectedStation} onSelect={setSelectedStation} />
-              {selectedStation && (
-                <div style={{ marginTop: "20px", width: "100%", maxWidth: "900px", background: "#fff", padding: '20px', borderRadius: '8px' }}>
-                  <StationInfo station={selectedStation} />
-                </div>
-              )}
-            </>
-          )}
+          {renderActivePageContent()}
         </main>
       </div>
     </div>

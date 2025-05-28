@@ -1,71 +1,205 @@
+/* src/components/main/Sidebar.module.css */
+
 .sidebar {
-  width: 300px;
-  background-color: #f5f3ff;
-  padding: 24px;
+  width: 260px; 
+  background-color: var(--sidebar-bg-color);
+  padding: 20px 10px; /* 좌우 패딩 줄임 */
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  transition: width 0.3s ease;
-  position: relative;
+  flex-direction: column; /* 토글 버튼과 메뉴 내용을 수직 배치 */
+  height: 100vh;
+  box-sizing: border-box;
+  border-right: 1px solid var(--sidebar-border-color);
+  transition: width 0.3s ease, padding 0.3s ease;
+  overflow-y: auto; /* 내용 많아지면 스크롤 */
+  overflow-x: hidden;
 }
 
-.collapsed {
-  width: 60px;
-  padding: 24px 8px;
+.sidebar.collapsed {
+  width: 60px; /* 축소 시 너비 */
+  padding: 20px 5px; /* 축소 시 패딩 */
+}
+
+.sidebar.collapsed .menuContent { /* 축소 시 로고 포함 전체 메뉴 내용 숨김 */
+  display: none;
+}
+/* 축소 시 토글 버튼만 보이도록 toggleContainer를 항상 flex의 첫번째 자식으로 */
+.sidebar.collapsed .toggleContainer {
+  margin-bottom: 0; /* 축소 시에는 토글 버튼 하단 여백 제거 */
+}
+
+
+.toggleContainer {
+  width: 100%;
+  display: flex; /* 내부 버튼 정렬용 */
+  justify-content: center; /* 기본 중앙, 축소 안됐을때 오른쪽 정렬은 아래에서 */
+  margin-bottom: 15px;
+}
+/* 사이드바가 확장되어 있을 때만 토글 버튼을 오른쪽으로 */
+.sidebar:not(.collapsed) .toggleContainer {
+  justify-content: flex-end;
+}
+
+
+.toggleButton {
+  background: none;
+  border: none;
+  color: var(--sidebar-text-color);
+  font-size: 22px;
+  cursor: pointer;
+  padding: 5px;
+  line-height: 1; /* 아이콘 버튼 여백 최소화 */
+}
+.dark-mode .toggleButton {
+  color: var(--dark-sidebar-text-color, var(--text-color));
+}
+
+.menuContent { /* 로고와 네비게이션 아이템 전체를 감싸는 div */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 내부 컨텐츠 중앙 정렬 */
+  width: 100%;
 }
 
 .logoContainer {
-  margin-bottom: 16px;
-  display: flex;
-  justify-content: center;
+  text-align: center;
+  margin-bottom: 25px;
 }
 
 .logo {
-  width: 100%;
-  max-width: 300px;
+  max-width: 100%; /* 부모 너비에 맞춤 */
+  width: 120px; /* 로고 기본 크기 */
   height: auto;
-  object-fit: contain;
+  /* mix-blend-mode 등은 이전 스타일 참고하여 적용 */
+}
+.dark-mode .logo { /* 예시 */
+  mix-blend-mode: screen; /* 다크모드에서 로고가 잘 보이도록 */
 }
 
-.toggleContainer {
+
+.navItems { /* 로그인/회원가입, 게시판 등 버튼 그룹 */
   display: flex;
-  justify-content: flex-start;
-  margin-bottom: 16px;
+  flex-direction: column;
+  gap: 8px; /* 버튼 간 기본 간격 */
+  width: 100%;
 }
 
-.toggle {
-  width: 32px;
-  height: 32px;
-  font-size: 20px;
+/* .sidebarTitle { ... } // h2 제목 스타일 (필요하다면) */
+
+.authButton, 
+.navButton {
+  font-size: 15px;
+  padding: 10px 15px;
   border-radius: 6px;
-  background-color: white;
-  border: 1px solid #ccc;
+  text-align: left;
+  width: 100%;
+  border: none;
+  background-color: transparent;
+  color: var(--sidebar-text-color);
   cursor: pointer;
-  outline: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  font-weight: 500;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0;
+  box-sizing: border-box;
 }
 
-.title {
-  font-size: 22px;
-  font-weight: bold;
-  margin-bottom: 20px;
+.authButton:hover,
+.navButton:hover {
+  background-color: var(--accent-color-primary); /* 레몬쉬폰 */
+  color: var(--accent-text-on-primary); /* 레몬쉬폰 위의 어두운 텍스트 */
+}
+.dark-mode .authButton,
+.dark-mode .navButton {
+  color: var(--dark-sidebar-text-color, var(--text-color));
+}
+.dark-mode .authButton:hover,
+.dark-mode .navButton:hover {
+  background-color: var(--accent-color-primary);
+  color: var(--accent-text-on-primary);
 }
 
-.button {
-  font-size: 16px;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  border-radius: 8px;
+
+.divider {
   width: 100%;
-  text-align: center;
   border: none;
-  background-color: #e0e0e0;
-  cursor: pointer;
+  border-top: 1px solid var(--sidebar-border-color);
+  margin: 15px 0;
 }
 
-.button:hover {
-  background-color: #d6d6f5;
+.boardMenuItemContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.boardToggleButton { /* 게시판 토글 버튼에만 특별히 적용 (navButton 스타일 상속) */
+  justify-content: space-between; 
+}
+
+.arrow { /* 화살표 아이콘 span에 직접 적용 */
+  font-size: 0.7em;
+  opacity: 0.7;
+  transition: transform 0.2s ease; /* 회전 애니메이션 */
+}
+.arrowDown::before {
+  content: '▼';
+}
+.arrowUp::before {
+  content: '▲';
+}
+/* 또는 .arrowDown { transform: rotate(0deg); } .arrowUp { transform: rotate(-180deg); } */
+
+
+.boardSubMenu {
+  width: 100%;
+  margin-top: 5px;
+  padding-left: 20px; /* 들여쓰기 */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background-color: var(--sidebar-submenu-bg-color, transparent); /* 하위메뉴 배경 (선택) */
+  border-radius: 4px; /* 하위메뉴 그룹에도 radius (선택) */
+}
+.dark-mode .boardSubMenu {
+  background-color: var(--dark-sidebar-submenu-bg-color, transparent);
+}
+
+.subMenuItem {
+  display: block;
+  padding: 8px 10px;
+  color: var(--sidebar-text-color);
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.9em;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  font-weight: normal;
+  box-sizing: border-box;
+  width: 100%;
+  text-align: left;
+}
+
+.subMenuItem:hover {
+  background-color: var(--accent-color-primary);
+  color: var(--accent-text-on-primary);
+}
+.dark-mode .subMenuItem {
+  color: var(--dark-sidebar-text-color, var(--text-color));
+}
+.dark-mode .subMenuItem:hover {
+  background-color: var(--accent-color-primary);
+  color: var(--accent-text-on-primary);
+}
+
+/* Sidebar.module.css 에 추가 */
+.logoLinkButton {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-block; /* 이미지 크기에 맞춤 */
+}
+
+.logoLinkButton:hover .logo { /* 로고 호버 시 약간의 효과 (선택 사항) */
+  opacity: 0.85;
 }

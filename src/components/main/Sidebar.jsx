@@ -1,21 +1,22 @@
-import { useState, useEffect } from "react";
+// src/components/main/SideBar.jsx
+import React, { useState, useEffect } from "react";
+// import { Link } from "react-router-dom"; // Link 사용 안 함
 import styles from "./Sidebar.module.css";
 import logo from "../../assets/Logo.jpg";
-import RegisterModal from "./Register";
-import { kakaoLogin } from "../../utils/KakaoLogin"; // 주의: 파일명 대소문자 일치
+import RegisterModal from "./Register"; // 실제 파일명 확인
+import { kakaoLogin } from "../../utils/KakaoLogin";
 
-export default function SideBar() {
+export default function SideBar({ onNavigate, currentView }) {
   const [collapsed, setCollapsed] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showBoardSubMenu, setShowBoardSubMenu] = useState(false);
 
-  // 새로고침해도 로그인 상태 유지
   useEffect(() => {
     const token = localStorage.getItem("jwt");
     setIsLoggedIn(!!token);
   }, []);
 
-  // 로그인 처리
   const handleLogin = () => {
     kakaoLogin()
       .then(() => {
@@ -26,50 +27,54 @@ export default function SideBar() {
       });
   };
 
-  // 로그아웃 처리
   const handleLogout = () => {
-  const kakao = window.Kakao;
-
-  if (kakao && kakao.Auth && kakao.Auth.getAccessToken()) {
-    kakao.Auth.logout(function () {
-      console.log("카카오 SDK 로그아웃 완료");
+    const kakao = window.Kakao;
+    if (kakao && kakao.Auth && kakao.Auth.getAccessToken()) {
+      kakao.Auth.logout(() => {
+        console.log("카카오 SDK 로그아웃 완료");
+        localStorage.removeItem("jwt");
+        setIsLoggedIn(false);
+      });
+    } else {
       localStorage.removeItem("jwt");
       setIsLoggedIn(false);
-    });
-  } else {
-    // SDK가 초기화되지 않았거나 이미 토큰 없음
-    localStorage.removeItem("jwt");
-    setIsLoggedIn(false);
-  }
-};
+    }
+  };
 
+  const toggleBoardSubMenu = () => {
+    setShowBoardSubMenu(prevShow => !prevShow);
+  };
+
+  const handleNavigation = (pageKey) => {
+    onNavigate(pageKey);
+    setShowBoardSubMenu(false);
+  };
 
   return (
     <>
       <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
         <div className={styles.toggleContainer}>
-          <button onClick={() => setCollapsed(!collapsed)} className={styles.toggle}>
-            ☰
+          <button onClick={() => setCollapsed(!collapsed)} className={styles.toggleButton}>
+            {collapsed ? "▶" : "☰"}
           </button>
         </div>
 
         {!collapsed && (
-          <>
+          <div className={styles.menuContent}>
             <div className={styles.logoContainer}>
-              <img src={logo} alt="로고" className={styles.logo} />
+              <button onClick={() => handleNavigation('metro')} className={styles.logoLinkButton}>
+                <img src={logo} alt="로고" className={styles.logo} />
+              </button>
             </div>
 
-            <div>
-              <h2 className={styles.title}>Side Bar</h2>
-
-              {/* 로그인 상태에 따른 조건부 렌더링 */}
+            <nav className={styles.navItems}>
               {!isLoggedIn ? (
                 <>
-                  <button className={styles.button} onClick={handleLogin}>
+                  <button className={`${styles.navButton} ${styles.authButton}`} onClick={handleLogin}>
                     로그인
                   </button>
                   <button
-                    className={styles.button}
+                    className={`${styles.navButton} ${styles.authButton}`}
                     onClick={() => setShowRegister(true)}
                   >
                     회원가입
@@ -77,16 +82,54 @@ export default function SideBar() {
                 </>
               ) : (
                 <>
-                  <button className={styles.button} onClick={handleLogout}>
+                  <button className={`${styles.navButton} ${styles.authButton}`} onClick={handleLogout}>
                     로그아웃
                   </button>
-                  <button className={styles.button}>마이페이지</button>
+                  <button onClick={() => handleNavigation('mypage')} className={styles.navButton}>
+                    마이페이지
+                  </button>
                 </>
               )}
 
-              <button className={styles.button}>게시판</button>
-            </div>
-          </>
+              <hr className={styles.divider} />
+
+              <div className={styles.boardMenuItemContainer}>
+                <button
+                  className={`${styles.navButton} ${styles.boardToggleButton}`}
+                  onClick={toggleBoardSubMenu}
+                  aria-expanded={showBoardSubMenu}
+                  aria-controls="board-submenu"
+                >
+                  게시판
+                  <span className={`${styles.arrow} ${showBoardSubMenu ? styles.arrowUp : styles.arrowDown}`}></span>
+                </button>
+                {showBoardSubMenu && (
+                  <div id="board-submenu" className={styles.boardSubMenu}>
+                    <button onClick={() => handleNavigation('poll')} className={styles.subMenuItem}>
+                      투표게시판
+                    </button>
+                    <button onClick={() => handleNavigation('freeboard')} className={styles.subMenuItem}>
+                      자유게시판
+                    </button>
+                    <button onClick={() => handleNavigation('mealmateboard')} className={styles.subMenuItem}>
+                      밥친구 구하기
+                    </button>
+                    <button onClick={() => handleNavigation('review')} className={styles.subMenuItem}>
+                      리뷰 게시판
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {/* ❗️ "내 가게 관리" 버튼 및 관련 조건부 렌더링 삭제됨 */}
+              {/* {isLoggedIn && (
+                <button onClick={() => handleNavigation('store')} className={styles.navButton}>
+                  내 가게 관리
+                </button>
+              )} 
+              */}
+            </nav>
+          </div>
         )}
       </aside>
 
