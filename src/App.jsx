@@ -39,15 +39,6 @@ function App() {
         <Header onSearchSelect={setSelectedStation} />
         
         {/* ❗️ 테스트 페이지 토글 버튼 (임시 위치 및 스타일) */}
-        <div style={{ padding: '10px', textAlign: 'center', background: '#e9ecef', borderBottom: '1px solid #ddd' }}>
-          <button 
-            onClick={togglePollTestPage} 
-            style={{ padding: '8px 15px', fontSize: '1em', cursor: 'pointer' }}
-          >
-            {showPollTestPage ? "지하철 노선도 앱으로 돌아가기" : "투표 기능 테스트 페이지 보기"}
-          </button>
-        </div>
-
         <main style={{
           flex: 1,
           overflow: "auto",

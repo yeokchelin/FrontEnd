@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import styles from "./Sidebar.module.css";
-import logo from "../../assets/Logo.jpg";
+import logo from "../../assets/Logo.png";
 import RegisterModal from "./Register";
 import { kakaoLogin } from "../../utils/KakaoLogin"; // 주의: 파일명 대소문자 일치
 
@@ -60,32 +60,29 @@ export default function SideBar() {
             </div>
 
             <div>
-              <h2 className={styles.title}>Side Bar</h2>
-
               {/* 로그인 상태에 따른 조건부 렌더링 */}
               {!isLoggedIn ? (
                 <>
                   <button className={styles.button} onClick={handleLogin}>
-                    로그인
-                  </button>
-                  <button
-                    className={styles.button}
-                    onClick={() => setShowRegister(true)}
-                  >
-                    회원가입
+                    로그인 / 회원가입
                   </button>
                 </>
               ) : (
                 <>
-                  <button className={styles.button} onClick={handleLogout}>
-                    로그아웃
-                  </button>
                   <button className={styles.button}>마이페이지</button>
                 </>
               )}
-
+              </div>
+              <hr />
               <button className={styles.button}>게시판</button>
-            </div>
+              {isLoggedIn && (
+                <>
+                  <button className={styles.button}>즐겨찾기</button>                
+                  <button className={styles.buttonLogOut} onClick={handleLogout}>
+                    로그아웃
+                  </button>
+                </>
+              )}
           </>
         )}
       </aside>
