@@ -44,7 +44,6 @@ export const mainLineStations = [
     { name: "충정로", code: "chungjeongno", x: 460, y: 200 },
     { name: "시청", code: "cityhall", x: 530, y: 200 }
 ];
-
 export const seongsuBranch = [
     { name: "성수", code: "seongsu", x: 1300, y: 200 },
     { name: "용답", code: "yongdap", x: 1360, y: 200 },
