@@ -1,19 +1,16 @@
-/* stationinfo.module.css */
 .infoBox {
   width: 100%;
   max-width: 1000px;
-  border: 1px solid var(--border-color);
+  border: 1px solid #ddd;
   border-radius: 10px;
   padding: 20px;
-  background-color: var(--background-color);
+  background-color: #fafafa;
   text-align: center;
-  color: var(--text-color);
 }
 
 .infoBox h2 {
   font-size: 20px;
   margin-bottom: 12px;
-  color: var(--text-color);
 }
 
 .infoBox ul {
@@ -23,5 +20,4 @@
 .infoBox li {
   margin-bottom: 8px;
   font-size: 16px;
-  color: var(--text-color);
 }
