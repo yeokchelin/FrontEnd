@@ -1,4 +1,5 @@
 // src/pages/board/BoardPage.jsx
+// 사용x
 import React from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import './BoardPage.css';

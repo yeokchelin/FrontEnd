@@ -36,7 +36,7 @@ export default function Header({ onSearchSelect }) {
         onChange={(e) => setSearchTerm(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleSearch()}
       />
-      <button onClick={handleSearch}>검색</button>
+      <button onClick={handleSearch}>🔍</button>
     </header>
   );
 }
