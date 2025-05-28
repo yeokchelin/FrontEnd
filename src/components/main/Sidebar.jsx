@@ -1,21 +1,20 @@
+// Sidebar.jsx
 import { useState, useEffect } from "react";
 import styles from "./Sidebar.module.css";
 import logo from "../../assets/Logo.png";
 import RegisterModal from "./Register";
-import { kakaoLogin } from "../../utils/KakaoLogin"; // 주의: 파일명 대소문자 일치
+import { kakaoLogin } from "../../utils/KakaoLogin";
 
-export default function SideBar() {
+export default function SideBar({ setView }) { // ✅ setView props 받기
   const [collapsed, setCollapsed] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // 새로고침해도 로그인 상태 유지
   useEffect(() => {
     const token = localStorage.getItem("jwt");
     setIsLoggedIn(!!token);
   }, []);
 
-  // 로그인 처리
   const handleLogin = () => {
     kakaoLogin()
       .then(() => {
@@ -26,31 +25,27 @@ export default function SideBar() {
       });
   };
 
-  // 로그아웃 처리
   const handleLogout = () => {
-  const kakao = window.Kakao;
-
-  if (kakao && kakao.Auth && kakao.Auth.getAccessToken()) {
-    kakao.Auth.logout(function () {
-      console.log("카카오 SDK 로그아웃 완료");
+    const kakao = window.Kakao;
+    if (kakao?.Auth?.getAccessToken()) {
+      kakao.Auth.logout(() => {
+        console.log("카카오 SDK 로그아웃 완료");
+        localStorage.removeItem("jwt");
+        setIsLoggedIn(false);
+        setView("map"); // ✅ 로그아웃 시 홈 화면으로
+      });
+    } else {
       localStorage.removeItem("jwt");
       setIsLoggedIn(false);
-    });
-  } else {
-    // SDK가 초기화되지 않았거나 이미 토큰 없음
-    localStorage.removeItem("jwt");
-    setIsLoggedIn(false);
-  }
-};
-
+      setView("map"); // ✅ 로그아웃 시 홈 화면으로
+    }
+  };
 
   return (
     <>
       <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
         <div className={styles.toggleContainer}>
-          <button onClick={() => setCollapsed(!collapsed)} className={styles.toggle}>
-            ☰
-          </button>
+          <button onClick={() => setCollapsed(!collapsed)} className={styles.toggle}>☰</button>
         </div>
 
         {!collapsed && (
@@ -60,7 +55,6 @@ export default function SideBar() {
             </div>
 
             <div>
-              {/* 로그인 상태에 따른 조건부 렌더링 */}
               {!isLoggedIn ? (
                 <>
                   <button className={styles.button} onClick={handleLogin}>
@@ -69,20 +63,25 @@ export default function SideBar() {
                 </>
               ) : (
                 <>
-                  <button className={styles.button}>마이페이지</button>
-                </>
-              )}
-              </div>
-              <hr />
-              <button className={styles.button}>게시판</button>
-              {isLoggedIn && (
-                <>
-                  <button className={styles.button}>즐겨찾기</button>                
-                  <button className={styles.buttonLogOut} onClick={handleLogout}>
-                    로그아웃
+                  <button className={styles.button} onClick={() => setView("mypage")}>
+                    마이페이지
                   </button>
                 </>
               )}
+            </div>
+
+            <hr />
+
+            <button className={styles.button}>게시판</button>
+
+            {isLoggedIn && (
+              <>
+                <button className={styles.button}>즐겨찾기</button>
+                <button className={styles.buttonLogOut} onClick={handleLogout}>
+                  로그아웃
+                </button>
+              </>
+            )}
           </>
         )}
       </aside>
