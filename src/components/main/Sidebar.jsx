@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import styles from "./Sidebar.module.css";
 import logo from "../assets/Logo.jpg";
 import RegisterModal from "./Register";
-import { kakaoLogin } from "../utils/KakaoLogin"; // 주의: 파일명 대소문자 일치
+import { kakaoLogin } from "../../utils/KakaoLogin"; // 주의: 파일명 대소문자 일치
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
