@@ -45,24 +45,27 @@ const DUMMY_POST_DATA = [
   },
 ];
 
-const MealMateBoardPage = () => { // 컴포넌트명 변경됨
+const MealMateBoardPage = () => {
+  console.log("MealMateBoardPage 렌더링 시작!"); // ✨ 추가 ✨
   const [postList, setPostList] = useState(DUMMY_POST_DATA);
 
+  // 게시글 추가 시 호출될 함수 (이전 디버깅 로그는 그대로 두셔도 됩니다)
   const handleAddPost = (newPostItem) => {
-    setPostList([newPostItem, ...postList]); // 최신 글이 맨 위로 오도록
+    console.log("새 게시글 추가 시도:", newPostItem);
+    setPostList([newPostItem, ...postList]);
+    console.log("업데이트된 postList:", [newPostItem, ...postList]);
   };
 
+  console.log("현재 postList 상태:", postList); // ✨ 추가 ✨
+
   return (
-    <div className="mealmate-board-page-container"> {/* 클래스명 변경됨 */}
-      <h2 className="page-title">밥친구 구하기</h2>
-
-      <MealMatePostForm onAddPost={handleAddPost} /> {/* 컴포넌트명 변경됨 */}
-
+    <div className="mealmate-board-page-container">
+      {/* ... */}
+      <MealMatePostForm onAddPost={handleAddPost} />
       <hr className="divider" />
-
-      <MealMatePostList postList={postList} /> {/* 컴포넌트명 변경됨 */}
+      <MealMatePostList postList={postList} />
     </div>
   );
 };
 
-export default MealMateBoardPage; // 컴포넌트명 변경됨
+export default MealMateBoardPage;
