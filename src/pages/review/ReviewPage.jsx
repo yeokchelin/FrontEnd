@@ -1,7 +1,7 @@
 // src/pages/ReviewPage.jsx
 import React, { useState } from 'react';
-import ReviewList from '../components/reviews/ReviewList';
-import ReviewForm from '../components/reviews/ReviewForm';
+import ReviewList from '../../components/reviews/ReviewList';
+import ReviewForm from '../../components/reviews/ReviewForm';
 import './ReviewPage.css';
 
 const DUMMY_REVIEW_DATA = [
