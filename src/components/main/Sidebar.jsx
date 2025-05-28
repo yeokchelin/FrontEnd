@@ -1,48 +1,58 @@
 import { useState, useEffect } from "react";
 import styles from "./Sidebar.module.css";
-import logo from "../assets/Logo.jpg";
+import logo from "../../assets/Logo.jpg";
 import RegisterModal from "./Register";
-import { kakaoLogin } from "../../utils/KakaoLogin"; // 주의: 파일명 대소문자 일치
+import { kakaoLogin } from "../../utils/KakaoLogin";
+import { useNavigate } from "react-router-dom";
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const navigate = useNavigate();
 
-  // 새로고침해도 로그인 상태 유지
   useEffect(() => {
     const token = localStorage.getItem("jwt");
     setIsLoggedIn(!!token);
+
+    const dark = localStorage.getItem("dark-mode") === "true";
+    setIsDarkMode(dark);
+    if (dark) {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
   }, []);
 
-  // 로그인 처리
   const handleLogin = () => {
     kakaoLogin()
-      .then(() => {
-        setIsLoggedIn(true);
-      })
-      .catch((err) => {
-        console.error("로그인 실패:", err);
-      });
+      .then(() => setIsLoggedIn(true))
+      .catch((err) => console.error("로그인 실패:", err));
   };
 
-  // 로그아웃 처리
   const handleLogout = () => {
-  const kakao = window.Kakao;
-
-  if (kakao && kakao.Auth && kakao.Auth.getAccessToken()) {
-    kakao.Auth.logout(function () {
-      console.log("카카오 SDK 로그아웃 완료");
+    const kakao = window.Kakao;
+    if (kakao?.Auth?.getAccessToken()) {
+      kakao.Auth.logout(() => {
+        console.log("카카오 SDK 로그아웃 완료");
+        localStorage.removeItem("jwt");
+        setIsLoggedIn(false);
+        navigate("/");
+      });
+    } else {
       localStorage.removeItem("jwt");
       setIsLoggedIn(false);
-    });
-  } else {
-    // SDK가 초기화되지 않았거나 이미 토큰 없음
-    localStorage.removeItem("jwt");
-    setIsLoggedIn(false);
-  }
-};
+      navigate("/");
+    }
+  };
 
+  const toggleDarkMode = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    localStorage.setItem("dark-mode", newMode);
+    document.documentElement.classList.toggle("dark-mode", newMode);
+  };
 
   return (
     <>
@@ -61,30 +71,24 @@ export default function Sidebar() {
 
             <div>
               <h2 className={styles.title}>Side Bar</h2>
-
-              {/* 로그인 상태에 따른 조건부 렌더링 */}
               {!isLoggedIn ? (
                 <>
-                  <button className={styles.button} onClick={handleLogin}>
-                    로그인
-                  </button>
-                  <button
-                    className={styles.button}
-                    onClick={() => setShowRegister(true)}
-                  >
-                    회원가입
-                  </button>
+                  <button className={styles.button} onClick={handleLogin}>로그인</button>
+                  <button className={styles.button} onClick={() => setShowRegister(true)}>회원가입</button>
                 </>
               ) : (
                 <>
-                  <button className={styles.button} onClick={handleLogout}>
-                    로그아웃
-                  </button>
-                  <button className={styles.button}>마이페이지</button>
+                  <button className={styles.button} onClick={handleLogout}>로그아웃</button>
+                  <button className={styles.button} onClick={() => navigate("/mypage")}>마이페이지</button>
                 </>
               )}
-
               <button className={styles.button}>게시판</button>
+            </div>
+
+            <div className={styles.themeToggle}>
+              <button className={styles.button} onClick={toggleDarkMode}>
+                {isDarkMode ? "☀️ 라이트모드" : "🌙 다크모드"}
+              </button>
             </div>
           </>
         )}
