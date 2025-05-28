@@ -34,9 +34,9 @@ function App() {
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        minWidth: 0,
+        minWidth: 0,                  // flexbox shrink-safe
       }}>
-        <Header />
+        <Header onSearchSelect={setSelectedStation} />
         
         {/* ❗️ 테스트 페이지 토글 버튼 (임시 위치 및 스타일) */}
         <div style={{ padding: '10px', textAlign: 'center', background: '#e9ecef', borderBottom: '1px solid #ddd' }}>
