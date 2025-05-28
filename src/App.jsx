@@ -11,17 +11,9 @@ import PollTestPage from './pages/test/PollTestPage';
 function App() {
   const [selectedStation, setSelectedStation] = useState(null);
   // ❗️ PollTestPage 표시 여부를 위한 상태 추가
-  const [showPollTestPage, setShowPollTestPage] = useState(false);
+  const [showPollTestPage] = useState(false);
 
   // ❗️ 테스트 페이지 표시/숨김 토글 함수
-  const togglePollTestPage = () => {
-    setShowPollTestPage(prevShow => !prevShow);
-    // 테스트 페이지로 전환 시 선택된 역 정보 초기화 (선택 사항)
-    if (!showPollTestPage) { // 즉,これから PollTestPage를 보여줄 것이라면
-        setSelectedStation(null);
-    }
-  };
-
   return (
     <div style={{
       display: "flex",
