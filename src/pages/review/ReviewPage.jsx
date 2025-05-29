@@ -1,8 +1,9 @@
 // src/pages/ReviewPage.jsx
 import React, { useState } from 'react';
-import ReviewList from '../../components/reviews/ReviewList';
-import ReviewForm from '../../components/reviews/ReviewForm';
-import './ReviewPage.css';
+import { Box, Typography, Divider, Rating, Paper } from '@mui/material'; // MUI Rating 컴포넌트 임포트
+import ReviewList from '../../components/reviews/ReviewList'; // 이미 MUI로 수정된 컴포넌트
+import ReviewForm from '../../components/reviews/ReviewForm'; // 이미 MUI로 수정된 컴포넌트
+// './ReviewPage.css' 임포트는 더 이상 필요 없습니다.
 
 const DUMMY_REVIEW_DATA = [
   { id: 1, authorName: '김철수', ratingValue: 5, commentText: '정말 좋았어요! 강력 추천합니다.', reviewDate: '2025-05-20T10:00:00Z', imageUrl: 'https://via.placeholder.com/150/FF0000/FFFFFF?text=Awesome' },
@@ -15,29 +16,93 @@ const ReviewPage = () => {
   const [reviewList, setReviewList] = useState(DUMMY_REVIEW_DATA);
 
   const handleAddReview = (newReviewItem) => {
-    setReviewList([newReviewItem, ...reviewList]);
+    // 이전 상태를 기반으로 상태를 업데이트할 때는 함수형 업데이트를 사용하는 것이 더 안전합니다.
+    setReviewList(prevList => [newReviewItem, ...prevList]);
   };
 
+  // 평균 별점 계산 (toFixed(1)은 문자열을 반환하므로 parseFloat으로 다시 숫자 변환)
   const averageRating = reviewList.length > 0
-    ? (reviewList.reduce((sum, item) => sum + item.ratingValue, 0) / reviewList.length).toFixed(1)
+    ? parseFloat((reviewList.reduce((sum, item) => sum + item.ratingValue, 0) / reviewList.length).toFixed(1))
     : 0;
 
   return (
-    // ReviewPage의 최상위 div에도 dark-mode 클래스를 적용
-    // 이 클래스는 App.jsx의 최상위 div에서 상속됩니다.
-    // CSS의 cascade 덕분에 상위 요소에 dark-mode 클래스가 있으면 하위 요소의 스타일이 변경됩니다.
-    <div className="review-page-container">
-      <h1 className="page-title">사용자 리뷰 (테스트 페이지)</h1>
+    <Box
+      sx={{
+        width: '100%', // App.jsx의 <main> 영역 너비를 채움
+        py: { xs: 2, sm: 3, md: 4 }, // 페이지 콘텐츠의 상하 패딩
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',   // 자식 요소들을 가로축 중앙에 배치
+        gap: { xs: 3, sm: 4 },  // 주요 섹션 간의 수직 간격 (기존보다 약간 늘림)
+      }}
+    >
+      <Typography
+        variant="h4" // 페이지 제목
+        component="h1"
+        sx={{
+          color: 'text.primary',
+          textAlign: 'center',
+          fontWeight: 'medium', // 약간의 굵기
+        }}
+      >
+        사용자 리뷰
+      </Typography>
 
-      <div className="average-rating-display">
-        현재 평균 별점: <span className="rating-value">{averageRating}</span> / 5
-        <span className="total-reviews"> ({reviewList.length}개 리뷰)</span>
-      </div>
+      {/* 평균 별점 표시 영역 */}
+      <Paper
+        elevation={1}
+        sx={{
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 1.5,
+          bgcolor: 'action.hover', // 테마의 호버 배경색과 유사한 미묘한 배경
+          borderRadius: 1.5,
+          width: 'fit-content', // 내용에 맞게 너비 조절
+          mx: 'auto', // 중앙 정렬
+        }}
+      >
+        <Typography variant="subtitle1" sx={{ color: 'text.secondary' }}>
+          평균 별점:
+        </Typography>
+        <Rating
+          name="average-rating-display"
+          value={averageRating}
+          precision={0.1} // 평균값을 소수점 첫째 자리까지 정확하게 표시
+          readOnly
+          size="medium" // 별 크기 "small", "medium", "large"
+          sx={{ color: 'warning.main' }} // 별 색상을 테마의 warning 색상으로
+        />
+        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+          {averageRating}
+        </Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          / 5
+        </Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary', ml: 0.5 }}>
+          ({reviewList.length}개 리뷰)
+        </Typography>
+      </Paper>
 
+      {/* 리뷰 작성 폼 */}
       <ReviewForm onAddReview={handleAddReview} />
-      <hr className="divider" />
+
+      {/* 구분선 */}
+      <Divider
+        sx={{
+          width: '100%',
+          maxWidth: { // ReviewList와 유사한 최대 너비로 제한
+            xs: `calc(100% - ${(theme) => theme.spacing(4)})`,
+            sm: '800px',
+          },
+          my: 2, // 구분선의 상하 마진
+        }}
+      />
+
+      {/* 리뷰 목록 */}
       <ReviewList reviewList={reviewList} />
-    </div>
+    </Box>
   );
 };
 

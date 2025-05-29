@@ -1,11 +1,13 @@
 // src/pages/board/MealMateBoardPage.jsx
 import React, { useState } from 'react';
-// MealMatePostList와 MealMatePostForm 임포트 경로 수정 (mealmate-board -> mealmateboard)
-import MealMatePostList from '../../components/mealmateboard/MealMatePostList'; 
-import MealMatePostForm from '../../components/mealmateboard/MealMatePostForm'; 
-import './MealMateBoardPage.css'; // 이 페이지의 스타일 파일 (파일명 변경됨)
+import { Box, Typography, Divider } from '@mui/material'; // MUI 컴포넌트 임포트
 
-// 게시판 테스트를 위한 더미 데이터
+// MealMatePostList와 MealMatePostForm 임포트 경로는 그대로 사용
+import MealMatePostList from '../../components/mealmateboard/MealMatePostList';
+import MealMatePostForm from '../../components/mealmateboard/MealMatePostForm';
+// './MealMateBoardPage.css' 임포트는 더 이상 필요 없습니다.
+
+// 게시판 테스트를 위한 더미 데이터 (그대로 유지)
 const DUMMY_POST_DATA = [
   {
     id: 1,
@@ -46,25 +48,61 @@ const DUMMY_POST_DATA = [
 ];
 
 const MealMateBoardPage = () => {
-  console.log("MealMateBoardPage 렌더링 시작!"); // ✨ 추가 ✨
+  console.log("MealMateBoardPage 렌더링 시작!");
   const [postList, setPostList] = useState(DUMMY_POST_DATA);
 
-  // 게시글 추가 시 호출될 함수 (이전 디버깅 로그는 그대로 두셔도 됩니다)
+  // 게시글 추가 시 호출될 함수 (그대로 유지)
   const handleAddPost = (newPostItem) => {
     console.log("새 게시글 추가 시도:", newPostItem);
-    setPostList([newPostItem, ...postList]);
+    setPostList(prevPosts => [newPostItem, ...postList]);
     console.log("업데이트된 postList:", [newPostItem, ...postList]);
   };
 
-  console.log("현재 postList 상태:", postList); // ✨ 추가 ✨
+  console.log("현재 postList 상태:", postList);
 
   return (
-    <div className="mealmate-board-page-container">
-      {/* ... */}
+    // 기존 div.mealmate-board-page-container를 Box로 대체
+    <Box
+      sx={{
+        width: '100%', // App.jsx의 <main> 영역의 너비를 채움
+        // bgcolor: 'transparent', // 기본값. App.jsx의 <main> 배경색(background.default)을 상속받음
+        py: { xs: 2, sm: 3 },     // 페이지 콘텐츠의 상하 패딩
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',   // 자식 요소들을 가로축 중앙에 배치
+        gap: { xs: 2.5, sm: 3 }, // 자식 요소들(제목, 폼, 구분선, 리스트) 사이의 수직 간격
+      }}
+    >
+      <Typography
+        variant="h4" // 페이지 제목에 적합한 크기
+        component="h1" // 시맨틱 HTML 태그
+        sx={{
+          color: 'text.primary', // 테마의 주요 텍스트 색상
+          textAlign: 'center',
+        }}
+      >
+        밥친구 구하기 게시판
+      </Typography>
+
+      {/* MealMatePostForm은 이미 Paper로 스타일링 되어 있으며,
+          자체적으로 maxWidth 및 ml/mr: 'auto'를 통해 중앙 정렬됩니다. */}
       <MealMatePostForm onAddPost={handleAddPost} />
-      <hr className="divider" />
+
+      {/* 구분선 */}
+      <Divider
+        sx={{
+          width: '100%', // 구분선 너비
+          maxWidth: { // MealMatePostList/Form 과 유사한 최대 너비로 제한하여 일관성 유지
+            xs: `calc(100% - ${(theme) => theme.spacing(4)})`, // 좌우 패딩 고려 시
+            sm: '800px', // MealMatePostList의 maxWidth와 유사하게
+          },
+          my: 2, // 구분선의 상하 마진 (기존 1에서 약간 늘림)
+        }}
+      />
+
+      {/* MealMatePostList는 자체적으로 maxWidth 및 중앙 정렬을 가짐 */}
       <MealMatePostList postList={postList} />
-    </div>
+    </Box>
   );
 };
 
