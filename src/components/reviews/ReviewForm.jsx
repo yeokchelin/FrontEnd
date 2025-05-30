@@ -1,71 +1,74 @@
 // src/components/review/ReviewForm.jsx
-import React, { useState, useRef } from 'react'; // useRef 추가 (파일 입력 초기화용)
+import React, { useState, useRef } from 'react';
 import {
   Box,
   TextField,
   Button,
   Typography,
   Paper,
-  Rating, // MUI Rating 컴포넌트
-  IconButton // 이미지 제거 버튼용
+  Rating,
+  IconButton
 } from '@mui/material';
-import PhotoCamera from '@mui/icons-material/PhotoCamera'; // 이미지 선택 버튼 아이콘
-import ClearIcon from '@mui/icons-material/Clear';         // 이미지 제거 아이콘
-import { useTheme } from '@mui/material/styles';         // 테마 직접 접근 (이미지 미리보기 테두리용)
+import PhotoCamera from '@mui/icons-material/PhotoCamera';
+import ClearIcon from '@mui/icons-material/Clear';
+import { useTheme } from '@mui/material/styles';
 
-// './ReviewForm.css' 임포트는 더 이상 필요 없습니다.
-
-export default function ReviewForm({ onAddReview }) {
-  const theme = useTheme(); // 테마 객체 가져오기
+// ❗️ storeId를 props로 받는다고 가정합니다.
+export default function ReviewForm({ onAddReview, storeId }) {
+  const theme = useTheme();
   const [authorName, setAuthorName] = useState('');
-  const [ratingValue, setRatingValue] = useState(0); // Rating 컴포넌트는 숫자 값을 사용 (0은 선택 안 함)
+  const [title, setTitle] = useState(''); // ❗️ 리뷰 제목 상태 추가
+  const [ratingValue, setRatingValue] = useState(0);
   const [commentText, setCommentText] = useState('');
-  const [imageFile, setImageFile] = useState(null); // 실제 파일 객체 저장 (올바르게 수정)
+  const [imageFile, setImageFile] = useState(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
 
-  const fileInputRef = useRef(null); // 파일 입력 DOM 요소 참조
+  const fileInputRef = useRef(null);
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    if (!authorName || !commentText || ratingValue === 0) {
-      alert('작성자, 별점(1점 이상), 내용을 모두 입력해주세요.');
+    // ❗️ 제목(title) 필드도 유효성 검사에 포함
+    if (!authorName.trim() || !title.trim() || !commentText.trim() || ratingValue === 0) {
+      alert('작성자, 제목, 별점(1점 이상), 내용을 모두 입력해주세요.');
       return;
     }
+    // ❗️ storeId가 유효한지 확인 (prop으로 받았다고 가정)
+    if (!storeId) {
+        alert('리뷰 대상 가게 정보가 없습니다. 다시 시도해주세요.');
+        return;
+    }
 
-    const newReview = {
-      id: Date.now(),
+    const newReviewData = {
+      // id는 백엔드에서 자동 생성되므로 여기서 보내지 않음
       authorName,
-      ratingValue, // 숫자 값 그대로 전달
+      title, // ❗️ 추가
+      ratingValue,
       commentText,
-      reviewDate: new Date().toISOString(),
       imageUrl: imagePreviewUrl,
-      // 실제 파일 업로드가 필요하다면 imageFile 객체도 함께 전달해야 합니다.
-      // imageFile: imageFile,
+      storeId, // ❗️ 추가 (리뷰 대상 ID)
+      // reviewDate는 백엔드에서 createdAt으로 자동 생성됨
+      // imageFile은 실제 파일 업로드 로직에서 사용 (여기서는 imageUrl만 전달)
     };
 
-    onAddReview(newReview);
+    onAddReview(newReviewData); // 부모 컴포넌트(ReviewPage)의 API 호출 함수 실행
 
     // 폼 초기화
     setAuthorName('');
+    setTitle(''); // ❗️ 추가
     setRatingValue(0);
     setCommentText('');
     setImageFile(null);
     setImagePreviewUrl(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // 파일 입력 필드 값 초기화
+      fileInputRef.current.value = "";
     }
   };
-
-  // Rating 컴포넌트의 onChange 핸들러에서 직접 setRatingValue 호출
-  // const handleRatingChange = (newRating) => {
-  //   setRatingValue(newRating);
-  // };
 
   const handleImageChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setImageFile(file); // 파일 객체 상태에 저장
-      setImagePreviewUrl(URL.createObjectURL(file)); // 미리보기 URL 생성
+      setImageFile(file);
+      setImagePreviewUrl(URL.createObjectURL(file));
     } else {
       setImageFile(null);
       setImagePreviewUrl(null);
@@ -76,7 +79,7 @@ export default function ReviewForm({ onAddReview }) {
     setImageFile(null);
     setImagePreviewUrl(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // 파일 입력 필드 값 초기화
+      fileInputRef.current.value = "";
     }
   };
 
@@ -87,17 +90,18 @@ export default function ReviewForm({ onAddReview }) {
       elevation={3}
       sx={{
         p: { xs: 2, sm: 3, md: 4 },
-        mt: 4, mb: 4,
+        mt: 2, // 다른 폼들과의 일관성을 위해 mt를 약간 줄임 (페이지에서 조절 가능)
+        mb: 4,
         maxWidth: '700px',
         ml: 'auto', mr: 'auto',
         bgcolor: 'background.paper',
         borderRadius: 2,
         display: 'flex',
         flexDirection: 'column',
-        gap: 3, // 각 폼 요소들 사이의 간격을 늘림
+        gap: 2.5, // 각 폼 요소들 사이의 간격을 이전보다 약간 줄임 (선택적)
       }}
     >
-      <Typography variant="h5" component="h2" align="center" gutterBottom sx={{ mb: 1 }}>
+      <Typography variant="h5" component="h2" align="center" gutterBottom sx={{ mb: 2 }}>
         리뷰 작성하기
       </Typography>
 
@@ -111,7 +115,17 @@ export default function ReviewForm({ onAddReview }) {
         variant="outlined"
       />
 
-      {/* 별점 입력 */}
+      {/* ❗️ 리뷰 제목 입력 필드 추가 */}
+      <TextField
+        label="리뷰 제목"
+        id="reviewTitle"
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        required
+        fullWidth
+        variant="outlined"
+      />
+
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
         <Typography component="label" htmlFor="review-rating" gutterBottom sx={{ fontWeight: 'medium', color: 'text.secondary', mb: 0.5 }}>
           별점<span style={{color: theme.palette.error.main}}>*</span>
@@ -121,10 +135,10 @@ export default function ReviewForm({ onAddReview }) {
           id="review-rating"
           value={ratingValue}
           onChange={(event, newValue) => {
-            setRatingValue(newValue === null ? 0 : newValue); // 사용자가 별을 다시 클릭해 선택 취소하면 null이 될 수 있음
+            setRatingValue(newValue === null ? 0 : newValue);
           }}
-          precision={0.5} // 0.5로 하면 반 별점 가능
-          size="medium"  // 별 크기 L, M, S
+          precision={0.5}
+          size="large" // 이전 코드에서는 medium이었으나, 사용자가 large로 요청했을 수 있어 유지
         />
       </Box>
 
@@ -140,26 +154,25 @@ export default function ReviewForm({ onAddReview }) {
         variant="outlined"
       />
 
-      {/* 사진 첨부 */}
       <Box>
         <Typography component="label" gutterBottom sx={{ fontWeight: 'medium', color: 'text.secondary', display:'block', mb: 0.5 }}>
           사진 첨부 (선택 사항)
         </Typography>
         <Button
           variant="outlined"
-          component="label" // 이 버튼이 숨겨진 input의 label 역할을 하도록 함
+          component="label"
           startIcon={<PhotoCamera />}
           fullWidth
-          sx={{ justifyContent: 'flex-start', color: 'text.secondary' }} // 버튼 내부 텍스트 왼쪽 정렬
+          sx={{ justifyContent: 'flex-start', color: 'text.secondary', py:1.2 }}
         >
           이미지 선택...
           <input
             type="file"
-            id="imageFile" // label의 htmlFor와 연결되지 않아도 component="label"로 작동
-            hidden // 실제 input 요소는 숨김
-            accept="image/*" // 이미지 파일만 선택 가능하도록
+            id="imageFile"
+            hidden
+            accept="image/*"
             onChange={handleImageChange}
-            ref={fileInputRef} // 파일 입력 초기화를 위해 ref 연결
+            ref={fileInputRef}
           />
         </Button>
         {imagePreviewUrl && (
@@ -173,12 +186,9 @@ export default function ReviewForm({ onAddReview }) {
               onClick={handleRemoveImage}
               size="small"
               sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                bgcolor: 'rgba(0, 0, 0, 0.5)', // 배경을 약간 어둡게 하여 아이콘이 잘 보이도록
-                color: 'white',
-                '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.7)' },
+                position: 'absolute', top: 8, right: 8,
+                bgcolor: 'rgba(0, 0, 0, 0.6)', color: 'white',
+                '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.8)' },
               }}
               aria-label="사진 삭제"
             >
@@ -193,7 +203,7 @@ export default function ReviewForm({ onAddReview }) {
         variant="contained"
         color="primary"
         size="large"
-        sx={{ mt: 2 }}
+        sx={{ mt: 2, py: 1.2 }}
       >
         리뷰 제출
       </Button>
