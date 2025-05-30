@@ -1,86 +1,77 @@
 // src/components/freeboard/FreePostItem.jsx
 import React from 'react';
-import { Paper, Typography, Box, Divider } from '@mui/material';
-// './FreePostItem.css' 임포트는 더 이상 필요 없습니다.
+import { Paper, Typography, Box, Divider, IconButton } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import axios from 'axios';
+import CommentSection from './CommentSection'; // ✅ 댓글 섹션 import
 
-// 날짜 포맷 함수는 그대로 사용합니다.
 const formatDateTime = (isoString) => {
-  if (!isoString) return ''; // isoString이 없을 경우 빈 문자열 반환
+  if (!isoString) return '';
   const date = new Date(isoString);
-  return date.toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+  return date.toLocaleString('ko-KR', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
     hour12: false
   });
 };
 
-const FreePostItem = ({ postItem }) => {
-  // postItem 데이터가 없을 경우를 대비한 방어 코드
-  if (!postItem) {
-    return null; // 또는 적절한 로딩/에러 UI
-  }
+const FreePostItem = ({ postItem, onEdit, onDelete }) => {
+  const handleDelete = async () => {
+    if (window.confirm("정말 삭제하시겠습니까?")) {
+      try {
+        await axios.delete(`http://localhost:8080/api/freeboard/${postItem.id}`);
+        onDelete(); // 목록 갱신
+      } catch (error) {
+        console.error("삭제 실패:", error);
+        alert("삭제 중 오류가 발생했습니다.");
+      }
+    }
+  };
 
   return (
     <Paper
-      elevation={2} // Paper 컴포넌트에 약간의 그림자 효과를 줍니다.
+      elevation={2}
       sx={{
-        p: { xs: 2, sm: 2.5 }, // 반응형 패딩 (16px ~ 20px)
-        mb: 2.5,               // 각 게시글 아이템 사이의 하단 마진 (20px)
-        bgcolor: 'background.paper', // 테마의 paper 배경색 사용
-        borderRadius: 2,         // 테마 기반 모서리 둥글기 (예: 8px)
-        // border: (theme) => `1px solid ${theme.palette.divider}`, // 필요하다면 테두리 추가
+        p: 2,
+        mb: 2,
+        bgcolor: 'background.paper',
+        borderRadius: 2,
       }}
     >
-      {/* 게시글 헤더 (제목) */}
-      <Box sx={{ mb: 1.5 }}> {/* 내용과의 하단 간격 */}
-        <Typography
-          variant="h6" // 제목에 적합한 크기 (예: 20px 정도)
-          component="h3" // HTML 시맨틱 태그는 h3로 유지
-          sx={{
-            fontWeight: 'bold',       // 제목 굵게
-            color: 'text.primary',    // 테마의 주요 텍스트 색상
-            wordBreak: 'break-word',  // 긴 제목이 레이아웃을 깨지 않도록 단어 단위 줄바꿈
-          }}
-        >
-          {postItem.title || "제목 없음"} {/* 제목이 없을 경우 대비 */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Typography variant="h6" sx={{ wordBreak: 'break-word' }}>
+          {postItem.title}
         </Typography>
+        <Box>
+          <IconButton onClick={() => onEdit(postItem)}><EditIcon /></IconButton>
+          <IconButton onClick={handleDelete}><DeleteIcon color="error" /></IconButton>
+        </Box>
       </Box>
 
-      {/* 게시글 내용 */}
       <Typography
-        variant="body1" // 본문 내용에 적합한 크기
-        component="p"     // HTML p 태그로 렌더링
+        variant="body1"
         sx={{
-          color: 'text.secondary',  // 약간 연한 텍스트 색상
-          whiteSpace: 'pre-wrap', // 입력된 줄바꿈 및 공백 유지
-          wordBreak: 'break-word',  // 긴 내용이 레이아웃을 깨지 않도록
-          mb: 2,                    // 푸터와의 하단 간격
-          minHeight: '60px',        // 내용이 적더라도 최소 높이 확보 (선택 사항)
+          color: 'text.secondary',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          my: 2,
         }}
       >
-        {postItem.content || "내용 없음"} {/* 내용이 없을 경우 대비 */}
+        {postItem.content}
       </Typography>
 
-      <Divider sx={{ mb: 1.5 }} /> {/* 내용과 푸터 사이의 구분선 */}
+      <Divider sx={{ mb: 1.5 }} />
 
-      {/* 게시글 푸터 (작성자, 작성일) */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between', // 양쪽 끝으로 정렬
-          alignItems: 'center',
-        }}
-      >
-        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-          {postItem.authorName || "익명"} {/* 작성자 이름이 없을 경우 대비 */}
-        </Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          {formatDateTime(postItem.createdAt)}
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Typography variant="caption">{postItem.writer || "익명"}</Typography>
+        <Typography variant="caption">{formatDateTime(postItem.createdAt)}</Typography>
       </Box>
+
+      <Divider sx={{ mt: 2, mb: 1 }} />
+
+      {/* ✅ 댓글 섹션 추가 */}
+      <CommentSection postId={postItem.id} />
     </Paper>
   );
 };
