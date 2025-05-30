@@ -1,11 +1,12 @@
 // src/components/freeboard/FreePostItem.jsx
 import React from 'react';
-import { Paper, Typography, Box, Divider } from '@mui/material';
-// './FreePostItem.css' 임포트는 더 이상 필요 없습니다.
+// ❗️ ListItemButton을 추가로 import 합니다. Paper를 클릭 가능하게 만들기 위해 사용합니다.
+import { Paper, Typography, Box, Divider, ListItemButton } from '@mui/material';
+// import { useTheme } from '@mui/material/styles'; // 현재 코드에서는 theme 객체를 직접 사용하지 않으므로 주석 처리 가능
 
-// 날짜 포맷 함수는 그대로 사용합니다.
+// 날짜 포맷 함수 (이전과 동일)
 const formatDateTime = (isoString) => {
-  if (!isoString) return ''; // isoString이 없을 경우 빈 문자열 반환
+  if (!isoString) return '날짜 정보 없음';
   const date = new Date(isoString);
   return date.toLocaleDateString('ko-KR', {
     year: 'numeric',
@@ -17,68 +18,96 @@ const formatDateTime = (isoString) => {
   });
 };
 
-const FreePostItem = ({ postItem }) => {
-  // postItem 데이터가 없을 경우를 대비한 방어 코드
+// ❗️ onPostClick prop을 새로 받습니다.
+const FreePostItem = ({ postItem, onPostClick }) => {
+  // const theme = useTheme(); // 현재 코드에서는 theme 객체를 직접 사용하지 않음
+
   if (!postItem) {
-    return null; // 또는 적절한 로딩/에러 UI
+    return null;
   }
 
+  // postItem의 필드명을 사용 (예: title, content, authorName, createdAt)
+  // 자유게시판 데이터 구조에 맞게 필드명을 사용해야 합니다.
+  const {
+    title = "제목 없음",
+    content = "내용 없음",
+    authorName = "익명",
+    createdAt,
+    // id 등 다른 필요한 필드도 reviewItem에서 가져올 수 있습니다.
+  } = postItem;
+
+
   return (
+    // ❗️ Paper 컴포넌트에 component={ListItemButton}과 onClick 핸들러를 추가합니다.
     <Paper
-      elevation={2} // Paper 컴포넌트에 약간의 그림자 효과를 줍니다.
+      elevation={2}
+      component={ListItemButton} // Paper를 클릭 가능한 버튼처럼 동작하게 합니다.
+      onClick={() => onPostClick(postItem)} // 클릭 시 onPostClick 함수에 postItem 전체를 전달합니다.
       sx={{
-        p: { xs: 2, sm: 2.5 }, // 반응형 패딩 (16px ~ 20px)
-        mb: 2.5,               // 각 게시글 아이템 사이의 하단 마진 (20px)
-        bgcolor: 'background.paper', // 테마의 paper 배경색 사용
-        borderRadius: 2,         // 테마 기반 모서리 둥글기 (예: 8px)
-        // border: (theme) => `1px solid ${theme.palette.divider}`, // 필요하다면 테두리 추가
+        p: { xs: 2, sm: 2.5 },
+        mb: 2.5,
+        bgcolor: 'background.paper',
+        borderRadius: 2,
+        width: '100%', // 부모 Box 너비에 맞춤 (FreePostList에서 maxWidth 제어)
+        textAlign: 'left', // ListItemButton 기본 스타일과 유사하게 왼쪽 정렬
+        // cursor: 'pointer'는 ListItemButton에 의해 자동으로 적용됩니다.
+        '&:hover': { // 호버 효과 (선택 사항)
+          bgcolor: 'action.hover',
+        },
       }}
     >
-      {/* 게시글 헤더 (제목) */}
-      <Box sx={{ mb: 1.5 }}> {/* 내용과의 하단 간격 */}
-        <Typography
-          variant="h6" // 제목에 적합한 크기 (예: 20px 정도)
-          component="h3" // HTML 시맨틱 태그는 h3로 유지
-          sx={{
-            fontWeight: 'bold',       // 제목 굵게
-            color: 'text.primary',    // 테마의 주요 텍스트 색상
-            wordBreak: 'break-word',  // 긴 제목이 레이아웃을 깨지 않도록 단어 단위 줄바꿈
-          }}
-        >
-          {postItem.title || "제목 없음"} {/* 제목이 없을 경우 대비 */}
-        </Typography>
-      </Box>
-
-      {/* 게시글 내용 */}
+      {/* 게시글 헤더 (제목) - Box 제거하고 Typography만으로도 충분할 수 있음 */}
       <Typography
-        variant="body1" // 본문 내용에 적합한 크기
-        component="p"     // HTML p 태그로 렌더링
+        variant="h6"
+        component="h3"
         sx={{
-          color: 'text.secondary',  // 약간 연한 텍스트 색상
-          whiteSpace: 'pre-wrap', // 입력된 줄바꿈 및 공백 유지
-          wordBreak: 'break-word',  // 긴 내용이 레이아웃을 깨지 않도록
-          mb: 2,                    // 푸터와의 하단 간격
-          minHeight: '60px',        // 내용이 적더라도 최소 높이 확보 (선택 사항)
+          fontWeight: 'bold',
+          color: 'text.primary',
+          wordBreak: 'break-word',
+          mb: 1, // 내용과의 간격
         }}
       >
-        {postItem.content || "내용 없음"} {/* 내용이 없을 경우 대비 */}
+        {title}
       </Typography>
 
-      <Divider sx={{ mb: 1.5 }} /> {/* 내용과 푸터 사이의 구분선 */}
+      {/* 게시글 내용 (간략히 표시) */}
+      <Typography
+        variant="body2"
+        component="p"
+        sx={{
+          color: 'text.secondary',
+          whiteSpace: 'pre-wrap', // 또는 'nowrap'으로 하고 아래 말줄임표 스타일 적용
+          wordBreak: 'break-word',
+          lineHeight: 1.5,
+          mb: 1.5,
+          // 여러 줄 말줄임표 스타일 (내용이 길 경우)
+          display: '-webkit-box',
+          WebkitLineClamp: 2, // 최대 2줄까지 보이고 나머지는 ...
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          minHeight: '2.8em', // 약 2줄 높이 확보 (폰트 크기에 따라 조절)
+        }}
+      >
+        {content}
+      </Typography>
+
+      <Divider sx={{ mb: 1 }} />
 
       {/* 게시글 푸터 (작성자, 작성일) */}
       <Box
         sx={{
           display: 'flex',
-          justifyContent: 'space-between', // 양쪽 끝으로 정렬
+          justifyContent: 'space-between',
           alignItems: 'center',
+          mt: 1, // Divider와의 간격
         }}
       >
         <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-          {postItem.authorName || "익명"} {/* 작성자 이름이 없을 경우 대비 */}
+          {authorName}
         </Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          {formatDateTime(postItem.createdAt)}
+        <Typography variant="caption" sx={{ color: 'text.disabled' }}> {/* 날짜는 더 연한 색으로 */}
+          {formatDateTime(createdAt)}
         </Typography>
       </Box>
     </Paper>
