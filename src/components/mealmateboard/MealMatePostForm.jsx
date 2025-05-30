@@ -1,7 +1,6 @@
 // src/components/mealmateboard/MealMatePostForm.jsx
 import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Paper, MenuItem } from '@mui/material';
-// './MealMatePostForm.css' 임포트는 더 이상 필요 없습니다.
+import { TextField, Button, Typography, Paper, MenuItem } from '@mui/material';
 
 export default function MealMatePostForm({ onAddPost }) {
   const [authorName, setAuthorName] = useState('');
@@ -9,31 +8,30 @@ export default function MealMatePostForm({ onAddPost }) {
   const [postContent, setPostContent] = useState('');
   const [meetingStation, setMeetingStation] = useState('');
   const [meetingTime, setMeetingTime] = useState('');
-  const [partySize, setPartySize] = useState(1); // 초기값 1 또는 ''
+  const [partySize, setPartySize] = useState(1);
   const [genderPreference, setGenderPreference] = useState('무관');
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    if (!authorName || !postTitle || !postContent || !meetingStation || !meetingTime || !partySize || partySize <= 0) {
+    if (!authorName.trim() || !postTitle.trim() || !postContent.trim() || !meetingStation.trim() || !meetingTime.trim() || !partySize || partySize <= 0) {
       alert('작성자, 제목, 내용, 만날 역, 시간, 인원(1 이상)은 필수 입력 항목입니다.');
       return;
     }
 
-    const newPost = {
-      id: Date.now(),
+    // 부모 컴포넌트로 전달할 데이터 객체
+    const formData = {
       authorName,
-      title: postTitle,
-      content: postContent,
+      postTitle,
+      postContent,
       meetingStation,
       meetingTime,
-      partySize: Number(partySize),
+      partySize: Number(partySize), // 숫자로 변환
       genderPreference,
-      status: '모집 중',
-      createdAt: new Date().toISOString(),
     };
 
-    onAddPost(newPost);
+    onAddPost(formData); // 부모의 handleAddPost 호출
 
+    // 폼 초기화
     setAuthorName('');
     setPostTitle('');
     setPostContent('');
@@ -56,90 +54,38 @@ export default function MealMatePostForm({ onAddPost }) {
       elevation={3}
       sx={{
         p: { xs: 2, sm: 3, md: 4 },
-        mt: 4,
-        mb: 4,
-        maxWidth: '700px',
-        ml: 'auto',
-        mr: 'auto',
+        width: '100%', // 부모 컨테이너에 의해 너비가 조절되도록
+        maxWidth: '700px', // 폼 자체의 최대 너비
         bgcolor: 'background.paper',
         borderRadius: 2,
         display: 'flex',
         flexDirection: 'column',
-        gap: 2.5, // 각 입력 필드 사이의 간격
+        gap: 2.5,
       }}
     >
       <Typography variant="h5" component="h2" align="center" gutterBottom sx={{ mb: 2 }}>
-        밥친구 구하기
+        밥친구 구하기 글쓰기
       </Typography>
 
-      <TextField
-        label="작성자 닉네임"
-        id="authorName"
-        value={authorName}
-        onChange={(e) => setAuthorName(e.target.value)}
-        required
-        fullWidth
-        variant="outlined"
-      />
-      <TextField
-        label="제목"
-        id="postTitle"
-        value={postTitle}
-        onChange={(e) => setPostTitle(e.target.value)}
-        required
-        fullWidth
-        variant="outlined"
-      />
-      <TextField
-        label="내용"
-        id="postContent"
-        value={postContent}
-        onChange={(e) => setPostContent(e.target.value)}
-        required
-        fullWidth
-        multiline
-        rows={5}
-        variant="outlined"
-      />
-      <TextField
-        label="만날 역"
-        id="meetingStation"
-        value={meetingStation}
-        onChange={(e) => setMeetingStation(e.target.value)}
-        required
-        fullWidth
-        variant="outlined"
-      />
-      <TextField
-        label="만날 시간"
-        id="meetingTime"
-        placeholder="예: 오늘 오후 7시, 내일 12:30"
-        value={meetingTime}
-        onChange={(e) => setMeetingTime(e.target.value)}
-        required
-        fullWidth
-        variant="outlined"
-      />
+      <TextField label="작성자 닉네임" value={authorName} onChange={(e) => setAuthorName(e.target.value)} required fullWidth variant="outlined" />
+      <TextField label="제목" value={postTitle} onChange={(e) => setPostTitle(e.target.value)} required fullWidth variant="outlined" />
+      <TextField label="내용" value={postContent} onChange={(e) => setPostContent(e.target.value)} required fullWidth multiline rows={5} variant="outlined" />
+      <TextField label="만날 역" value={meetingStation} onChange={(e) => setMeetingStation(e.target.value)} required fullWidth variant="outlined" />
+      <TextField label="만날 시간" placeholder="예: 오늘 오후 7시, 내일 12:30" value={meetingTime} onChange={(e) => setMeetingTime(e.target.value)} required fullWidth variant="outlined" />
       <TextField
         label="구하는 인원 (본인 제외)"
-        id="partySize"
-        type="number" // 숫자 입력 필드
+        type="number"
         value={partySize}
         onChange={(e) => setPartySize(e.target.value)}
         required
         fullWidth
         variant="outlined"
-        InputLabelProps={{ // type="number"일 때 레이블이 겹치지 않도록
-          shrink: true,
-        }}
-        inputProps={{ // HTML5 input 속성
-          min: 1, // 최소값 1
-        }}
+        InputLabelProps={{ shrink: true }}
+        inputProps={{ min: 1 }}
       />
       <TextField
-        select // select 모드로 변경
+        select
         label="성별 선호"
-        id="genderPreference"
         value={genderPreference}
         onChange={(e) => setGenderPreference(e.target.value)}
         fullWidth
@@ -152,13 +98,7 @@ export default function MealMatePostForm({ onAddPost }) {
         ))}
       </TextField>
 
-      <Button
-        type="submit"
-        variant="contained"
-        color="primary"
-        size="large"
-        sx={{ mt: 1 }}
-      >
+      <Button type="submit" variant="contained" color="primary" size="large" sx={{ mt: 1 }}>
         게시글 작성
       </Button>
     </Paper>
