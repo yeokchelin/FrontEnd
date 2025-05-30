@@ -24,6 +24,7 @@ import FreeBoardPage from "./pages/board/FreeBoardPage";
 import MealMateBoardPage from "./pages/board/MealMateBoardPage";
 import ReviewBoardPage from "./pages/review/ReviewPage";
 import StoreManagementPage from "./pages/storemanagement/StoreManagementPage";
+import ChangeGradePage from "./pages/grade/ChangeGradePage"; // ✅ 추가
 
 // 테마 모드 토글 컨텍스트
 const ColorModeContext = createContext({ toggleColorMode: () => {} });
@@ -97,13 +98,13 @@ function AppContent() {
             <ReviewBoardPage />
           ) : view === "manageStore" ? (
             <StoreManagementPage />
+          ) : view === "changeGrade" ? ( // ✅ 조건 추가
+            <ChangeGradePage />
           ) : (
             <>
               <MetroMap selected={selectedStation} onSelect={setSelectedStation} />
               {selectedStation && (
-                <Box
-                  sx={{ mt: 3, width: "100%", maxWidth: "900px" }}
-                >
+                <Box sx={{ mt: 3, width: "100%", maxWidth: "900px" }}>
                   <StationInfo station={selectedStation} restaurants={restaurantData} />
                 </Box>
               )}

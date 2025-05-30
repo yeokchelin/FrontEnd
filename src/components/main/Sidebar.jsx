@@ -180,7 +180,7 @@ export default function SideBar({ setView }) {
 
           {isLoggedIn && (
             <>
-              <ListItemButton sx={commonListItemButtonStyles} onClick={() => setView("favorites")}>
+              <ListItemButton sx={commonListItemButtonStyles} onClick={() => setView("changeGrade")}>
                 <ListItemIcon><StarBorderIcon /></ListItemIcon>
                 {!collapsed && <ListItemText primary="회원등급 변경하기" />}
               </ListItemButton>

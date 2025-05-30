@@ -1,21 +1,19 @@
 // src/pages/Mypage.jsx
-import React, { useEffect, useState } from "react"; // React 임포트 추가!
+import React, { useEffect, useState } from "react";
 import { Box, Typography, Paper, List, ListItem, ListItemText, Button, Divider, ListItemIcon } from "@mui/material";
-import RateReviewIcon from '@mui/icons-material/RateReview';     // 리뷰 아이콘
-import FavoriteIcon from '@mui/icons-material/Favorite';       // 찜 아이콘
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'; // 회원 등급 아이콘
-import StorefrontIcon from '@mui/icons-material/Storefront';     // 가게 관리 아이콘
-// import styles from "./Mypage.module.css"; // 더 이상 필요 없습니다.
+import RateReviewIcon from '@mui/icons-material/RateReview';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 
-// 각 섹션을 감싸는 Paper 스타일을 위한 헬퍼 컴포넌트
 const SectionPaper = ({ title, icon, children }) => (
   <Paper
-    elevation={2} // 그림자 효과
+    elevation={2}
     sx={{
-      p: { xs: 2, sm: 3 }, // 내부 패딩
-      width: '100%',        // 부모 너비에 맞춤
+      p: { xs: 2, sm: 3 },
+      width: '100%',
       bgcolor: 'background.paper',
-      borderRadius: 2,      // 모서리 둥글기
+      borderRadius: 2,
     }}
   >
     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -31,10 +29,10 @@ const SectionPaper = ({ title, icon, children }) => (
 export default function Mypage({ setView }) {
   const [reviews, setReviews] = useState([]);
   const [favorites, setFavorites] = useState([]);
-  const [userLevel, setUserLevel] = useState("");
+  const [userLevel, setUserLevel] = useState("일반 회원"); // 초기값
+  const [hasStores, setHasStores] = useState(false);
 
   useEffect(() => {
-    // 더미 데이터 초기화
     setReviews([
       { id: 1, place: "강남 맛집", content: "진짜 맛있었어요! 다음에도 방문할 예정입니다." },
       { id: 2, place: "홍대 유명 카페", content: "분위기도 좋고 커피 맛도 일품이었어요." },
@@ -43,43 +41,46 @@ export default function Mypage({ setView }) {
       { id: 1, name: "이태원 파스타 전문점" },
       { id: 2, name: "한남동 디저트 맛집" },
     ]);
-    setUserLevel("우수 점주"); // 예시: 사용자 등급
-  }, []);
+
+    let currentLevel = "일반 회원";
+    let storesExist = false;
+    try {
+      const savedStoresData = localStorage.getItem('userRegisteredStores');
+      if (savedStoresData) {
+        const registeredStores = JSON.parse(savedStoresData);
+        if (Array.isArray(registeredStores) && registeredStores.length > 0) {
+          currentLevel = "점주 회원";
+          storesExist = true;
+        }
+      }
+    } catch (e) {
+      console.error("Mypage: 로컬 스토리지 로딩/파싱 실패", e);
+      // currentLevel과 storesExist는 기본값 유지
+    }
+    setUserLevel(currentLevel);
+    setHasStores(storesExist);
+  }, []); // 마운트 시 한 번만 실행
 
   const handleManageStore = () => {
-    setView("manageStore"); // StoreManagementPage로 뷰 변경
+    setView("manageStore");
   };
 
   return (
     <Box
       sx={{
         width: '100%',
-        py: { xs: 2, sm: 3, md: 4 }, // 페이지 전체의 상하 패딩
+        py: { xs: 2, sm: 3, md: 4 },
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center', // 페이지 내 주요 콘텐츠 블록들을 중앙 정렬
-        gap: { xs: 3, sm: 4 },   // 제목과 각 섹션 사이의 간격
+        alignItems: 'center',
+        gap: { xs: 3, sm: 4 },
       }}
     >
-      <Typography
-        variant="h4" // 페이지 제목
-        component="h1"
-        sx={{ color: 'text.primary', textAlign: 'center', fontWeight: 'bold' }}
-      >
+      <Typography variant="h4" component="h1" sx={{ color: 'text.primary', textAlign: 'center', fontWeight: 'bold' }}>
         마이페이지
       </Typography>
 
-      {/* 리뷰 및 찜한 가게 섹션을 가로로 배치 (중간 크기 이상 화면) */}
-      <Box
-        sx={{
-          width: '100%',
-          maxWidth: 'lg', // 전체 콘텐츠 영역의 최대 너비를 lg 브레이크포인트(1200px)로 제한
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' }, // 작은 화면에서는 세로, md 이상에서는 가로 배치
-          gap: { xs: 3, md: 3 }, // 섹션 간 간격
-        }}
-      >
-        {/* 나의 리뷰 섹션 */}
+      <Box /* 리뷰 및 찜한 가게 섹션 */ sx={{ width: '100%', maxWidth: 'lg', display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 3, md: 3 } }}>
         <Box sx={{ flex: 1, width: '100%' }}>
           <SectionPaper title="나의 활동 내역" icon={<RateReviewIcon />}>
             {reviews.length > 0 ? (
@@ -87,22 +88,16 @@ export default function Mypage({ setView }) {
                 {reviews.map((review, index) => (
                   <React.Fragment key={review.id}>
                     <ListItem sx={{ px: 0, flexDirection: 'column', alignItems: 'flex-start' }}>
-                      <Typography component="strong" sx={{ fontWeight: 'medium', color: 'text.primary' }}>
-                        {review.place}
-                      </Typography>
+                      <Typography component="strong" sx={{ fontWeight: 'medium', color: 'text.primary' }}>{review.place}</Typography>
                       <ListItemText secondary={review.content} sx={{mt: 0.5}} />
                     </ListItem>
                     {index < reviews.length - 1 && <Divider component="li" sx={{my: 1}} />}
                   </React.Fragment>
                 ))}
               </List>
-            ) : (
-              <Typography variant="body2" color="text.secondary">작성한 리뷰가 없습니다.</Typography>
-            )}
+            ) : ( <Typography variant="body2" color="text.secondary">작성한 리뷰가 없습니다.</Typography> )}
           </SectionPaper>
         </Box>
-
-        {/* 찜한 가게 섹션 */}
         <Box sx={{ flex: 1, width: '100%' }}>
           <SectionPaper title="찜한 가게" icon={<FavoriteIcon />}>
             {favorites.length > 0 ? (
@@ -116,48 +111,24 @@ export default function Mypage({ setView }) {
                   </React.Fragment>
                 ))}
               </List>
-            ) : (
-              <Typography variant="body2" color="text.secondary">찜한 가게가 없습니다.</Typography>
-            )}
+            ) : ( <Typography variant="body2" color="text.secondary">찜한 가게가 없습니다.</Typography> )}
           </SectionPaper>
         </Box>
       </Box>
 
-      {/* 회원 등급 및 가게 관리 버튼 섹션 */}
-      <Box
-        sx={{
-          width: '100%',
-          maxWidth: 'lg', // 위쪽 섹션과 동일한 최대 너비
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' }, // 작은 화면에서는 세로, sm 이상에서는 가로 배치
-          justifyContent: 'space-between', // 가로 배치 시 양쪽 끝으로
-          alignItems: { xs: 'stretch', sm: 'center' }, // 가로 배치 시 수직 중앙, 세로 배치 시 버튼 늘림
-          gap: { xs: 2, sm: 3 },
-          mt: 1, // 위 섹션과의 간격
-        }}
-      >
-        <Box sx={{ flex: {sm: 1} }}> {/* 회원 등급이 버튼보다 많은 공간을 차지하도록 (선택 사항) */}
+      <Box /* 회원 등급 및 가게 관리 버튼 섹션 */ sx={{ width: '100%', maxWidth: 'lg', display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: { xs: 2, sm: 3 }, mt: 1, }}>
+        <Box sx={{ flex: {sm: 1} }}>
           <SectionPaper title="회원 등급" icon={<AdminPanelSettingsIcon />}>
-            <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-              {userLevel} 회원
+            <Typography variant="h6" sx={{ color: userLevel === "점주 회원" ? 'primary.main' : 'text.secondary', fontWeight: 'bold' }}>
+              {userLevel}
             </Typography>
           </SectionPaper>
         </Box>
-
-        <Button
-          variant="contained"
-          color="primary"
-          size="large"
-          onClick={handleManageStore}
-          startIcon={<StorefrontIcon />}
-          sx={{
-            py: 1.5, // 버튼의 상하 패딩을 늘려 더 커 보이게
-            fontWeight: 'bold',
-            width: { xs: '100%', sm: 'auto' }, // 작은 화면에서는 전체 너비
-          }}
-        >
-          내 가게 관리
-        </Button>
+        {hasStores && (
+          <Button variant="contained" color="primary" size="large" onClick={handleManageStore} startIcon={<StorefrontIcon />} sx={{ py: 1.5, fontWeight: 'bold', width: { xs: '100%', sm: 'auto' } }}>
+            내 가게 관리
+          </Button>
+        )}
       </Box>
     </Box>
   );
