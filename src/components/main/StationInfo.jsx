@@ -1,4 +1,3 @@
-// src/components/main/StationInfo.jsx
 import React from 'react';
 import { Paper, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
 
@@ -48,25 +47,25 @@ export default function StationInfo({ station, restaurants }) {
                 )}
                 <ListItemText
                   primary={
-                    <Typography variant="subtitle1" fontWeight="bold">
+                    <Typography variant="subtitle1" fontWeight="bold" component="span">
                       {restaurant.name}
                     </Typography>
                   }
                   secondary={
-                    <>
-                      <Typography variant="body2" color="text.secondary">
+                    <span>
+                      <Typography variant="body2" color="text.secondary" component="div">
                         {restaurant.description}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" component="div">
                         카테고리: {restaurant.category}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" component="div">
                         평점: {restaurant.rating}점 ({restaurant.reviewCount}개 리뷰)
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" component="div">
                         역: {restaurant.stationName}
                       </Typography>
-                    </>
+                    </span>
                   }
                 />
               </ListItem>
@@ -82,3 +81,4 @@ export default function StationInfo({ station, restaurants }) {
     </Paper>
   );
 }
+
