@@ -4,7 +4,7 @@ import { Box, Typography } from '@mui/material';
 import FreePostItem from './FreePostItem';
 
 const FreePostList = ({ postList, onEdit, onDelete }) => {
-  if (!postList || postList.length === 0) {
+  if (!Array.isArray(postList) || postList.length === 0) {
     return (
       <Box sx={{ py: 6, width: '100%', display: 'flex', justifyContent: 'center' }}>
         <Typography variant="subtitle1" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>

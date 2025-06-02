@@ -7,7 +7,6 @@ const CommentSection = ({ postId }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
 
-  // ✅ useCallback으로 감싼 fetchComments
   const fetchComments = useCallback(async () => {
     try {
       const response = await axios.get(`http://localhost:8080/api/comments/${postId}`);
@@ -18,21 +17,22 @@ const CommentSection = ({ postId }) => {
   }, [postId]);
 
   useEffect(() => {
-    fetchComments(); // ✅ useCallback으로 인해 안전하게 의존성 배열에 포함 가능
+    fetchComments();
   }, [fetchComments]);
 
   const handleSubmit = async () => {
     if (!newComment.trim()) return;
 
     try {
-      await axios.post(`http://localhost:8080/api/comments`, {
-        postId,
+      await axios.post(`http://localhost:8080/api/comments/${postId}`, {
+        writer: '익명', // 로그인 기능과 연동하면 사용자 정보로 대체 가능
         content: newComment
       });
       setNewComment('');
-      fetchComments(); // 새 댓글 등록 후 다시 불러오기
+      fetchComments();
     } catch (error) {
       console.error('댓글 작성 실패:', error);
+      alert('댓글 작성 중 오류가 발생했습니다.');
     }
   };
 
