@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, Typography, Divider, Button, Paper, CircularProgress, Alert,
-  Modal, IconButton
+  Modal, IconButton, useTheme
 } from '@mui/material';
 import FreePostList from '../../components/freeboard/FreePostList';
 import FreePostForm from '../../components/freeboard/FreePostForm';
@@ -11,21 +11,6 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import axios from 'axios';
 
 const API_BASE_URL = '/api';
-
-const modalStyle = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: { xs: '95%', sm: '80%', md: '700px' },
-  maxHeight: '90vh',
-  overflowY: 'auto',
-  bgcolor: 'background.paper',
-  boxShadow: 24,
-  p: { xs: 2, sm: 3, md: 4 },
-  borderRadius: 2,
-  outline: 'none',
-};
 
 // FreePostDetailView 컴포넌트는 현재 사용되지 않는 것으로 보이지만, 일단 유지합니다.
 const FreePostDetailView = ({ post, onBackToList, currentUserId, currentUserAvatarUrl, currentUserNickname }) => {
@@ -75,6 +60,8 @@ const FreePostDetailView = ({ post, onBackToList, currentUserId, currentUserAvat
 
 
 const FreeBoardPage = ({ currentUserId, currentUserNickname, currentUserAvatarUrl }) => {
+  const theme = useTheme();
+
   // 상태 변수들
   const [freePostList, setFreePostList] = useState([]);
   const [selectedPost, setSelectedPost] = useState(null);
@@ -83,6 +70,23 @@ const FreeBoardPage = ({ currentUserId, currentUserNickname, currentUserAvatarUr
 
   const [openCommentsModal, setOpenCommentsModal] = useState(false);
   const [postForCommentsModal, setPostForCommentsModal] = useState(null);
+
+  // ★★★ modalStyle을 컴포넌트 내부로 이동하여 theme 객체에 접근 (스크롤바 숨김 CSS 제거) ★★★
+  const modalStyle = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: { xs: '95%', sm: '80%', md: '700px' },
+    maxHeight: '90vh',
+    overflowY: 'auto', // 스크롤바 기능 유지 (보이는 것은 전역 CSS로 숨김)
+    bgcolor: 'background.paper',
+    boxShadow: 24,
+    p: { xs: 2, sm: 3, md: 4 },
+    borderRadius: 2,
+    outline: 'none',
+  };
+
 
   // 게시글 목록을 불러오는 함수
   const fetchPosts = useCallback(async () => {
@@ -214,15 +218,14 @@ const FreeBoardPage = ({ currentUserId, currentUserNickname, currentUserAvatarUr
         aria-labelledby="comment-modal-title"
         aria-describedby="comment-modal-description"
       >
-        <Box sx={modalStyle}>
+        <Box sx={modalStyle}> {/* ★★★ 변경된 modalStyle 적용 ★★★ */}
           {/* CommentSection 렌더링 조건: postForCommentsModal, postForCommentsModal.id, currentUserId 모두 유효할 때 */}
           {postForCommentsModal && postForCommentsModal.id && currentUserId && !isNaN(Number(currentUserId)) ? (
             <>
               {/* 모달 헤더 - 닫기 버튼 */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                {/* ❗️❗️❗️ 이 부분을 수정했습니다. ❗️❗️❗️ */}
                 <Typography id="comment-modal-title" variant="h6" component="h2">
-                  {postForCommentsModal.title} {/* 이제 제목만 바로 표시됩니다. */}
+                  {postForCommentsModal.title}
                 </Typography>
                 <IconButton onClick={handleCloseCommentsModal} aria-label="닫기">
                   <span style={{ fontSize: '1.5rem', color: 'text.secondary' }}>&times;</span>
