@@ -187,7 +187,7 @@ export default function SideBar({ setView }) {
           <Collapse in={boardOpen} timeout="auto" unmountOnExit>
             <List component="div" disablePadding sx={{ pl: 2 }}>
               {[
-                { text: "투표게시판", view: "vote", icon: <HowToVoteIcon fontSize="small" /> },
+                { text: "오늘의 메뉴 추천", view: "todayMenu", icon: <RestaurantMenuIcon fontSize="small" /> },
                 { text: "자유게시판", view: "free", icon: <ForumIcon fontSize="small" /> },
                 { text: "밥친구 구하기", view: "mate", icon: <RestaurantMenuIcon fontSize="small" /> },
                 { text: "리뷰 게시판", view: "review", icon: <RateReviewIcon fontSize="small" /> },

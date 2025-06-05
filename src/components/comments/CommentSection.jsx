@@ -26,7 +26,7 @@ const CommentSection = ({ targetId, currentUserId, currentUserAvatarUrl, current
     setError(null);
     console.log(`[CommentSection] Fetching comments for targetId: ${targetId}`);
     try {
-      const response = await axios.get(`${API_BASE_URL}/mateFoodPost/${targetId}/comments`);
+      const response = await axios.get(`${API_BASE_URL}/comments/${targetId}`);
       const fetchedComments = response.data.map(comment => ({
         id: comment.id,
         targetId: targetId,
@@ -36,10 +36,9 @@ const CommentSection = ({ targetId, currentUserId, currentUserAvatarUrl, current
         content: comment.content,
         createdAt: comment.createdAt || new Date().toISOString(), // 백엔드 응답에 createdAt 포함 필수
       }));
-      const sortedComments = fetchedComments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      setComments(sortedComments);
+      
+      setComments(fetchedComments);
     } catch (err) {
-      console.error("댓글 로딩 API 호출 실패:", err.response || err.message || err);
       setError("댓글을 불러오는 중 오류가 발생했습니다.");
       setComments([]);
     } finally {
@@ -53,21 +52,18 @@ const CommentSection = ({ targetId, currentUserId, currentUserAvatarUrl, current
 
   // 새 댓글 추가 핸들러 (실제 API 호출)
   const handleAddComment = async (commentText) => {
-    if (!targetId) { /* ... 이전과 동일한 null 체크 ... */ return; }
-    if (!currentUserNickname || currentUserNickname.trim() === "") { /* ... 이전과 동일한 null 체크 ... */ return; }
-
+    if (!targetId || !currentUserNickname) return;
     setIsLoadingForm(true); setError(null);
     try {
       const newCommentPayload = {
-        writer: currentUserNickname, // 실제 로그인 사용자 닉네임
+        writer: currentUserNickname,
         content: commentText,
       };
-      console.log("[CommentSection] 새 댓글 작성 요청:", newCommentPayload, "targetId:", targetId);
-      await axios.post(`${API_BASE_URL}/mateFoodPost/${targetId}/comments`, newCommentPayload);
-      fetchComments(); // 성공 후 목록 새로고침
+      // 경로 수정!
+      await axios.post(`${API_BASE_URL}/comments/${targetId}`, newCommentPayload);
+      fetchComments();
       alert("댓글이 성공적으로 등록되었습니다!");
-    // eslint-disable-next-line no-unused-vars
-    } catch (err) { /* ... 이전과 동일한 에러 처리 ... */ }
+    } catch (err) { /* ... */ }
     finally { setIsLoadingForm(false); }
   };
 
@@ -79,54 +75,34 @@ const CommentSection = ({ targetId, currentUserId, currentUserAvatarUrl, current
 
   // 댓글 수정 제출 핸들러 (실제 API 호출)
   const handleUpdateComment = async (commentId, updatedText) => {
-    if (!targetId || !commentId) {
-      console.error("targetId 또는 commentId가 없어 댓글을 수정할 수 없습니다.");
-      alert("댓글 수정 중 오류가 발생했습니다. (ID 정보 누락)");
-      return;
-    }
+    // PUT /api/comments/{commentId}  (백엔드 준비 필요)
+    if (!commentId) return;
     setIsLoadingForm(true); setError(null);
     try {
-      // 백엔드 CommentRequestDto 형식에 맞춤 (writer는 보통 수정 안 함)
       const updatePayload = {
         content: updatedText,
-        writer: editingComment?.writer || currentUserNickname, // 기존 작성자 정보 유지 또는 현재 사용자 (백엔드에서 권한 검증)
+        writer: editingComment?.writer || currentUserNickname,
       };
-      console.log(`[CommentSection] 댓글 수정 요청 (ID: ${commentId}):`, updatePayload);
-
-      // ❗️ 실제 백엔드 댓글 수정 API 호출
-      await axios.put(`${API_BASE_URL}/mateFoodPost/${targetId}/comments/${commentId}`, updatePayload);
-      
-      fetchComments(); // 성공 후 목록 새로고침
-      setEditingComment(null); // 수정 상태 해제
-      setShowMainForm(true);   // 기본 댓글 작성 폼 다시 표시
+      await axios.put(`${API_BASE_URL}/comments/${commentId}`, updatePayload);
+      fetchComments();
+      setEditingComment(null);
+      setShowMainForm(true);
       alert("댓글이 성공적으로 수정되었습니다.");
-    } catch (err) {
-      console.error("댓글 수정 API 호출 실패:", err.response || err.message || err);
-      const apiErrorMessage = err.response?.data?.message || err.response?.data || err.message || "댓글 수정 중 서버 오류가 발생했습니다.";
-      setError(apiErrorMessage);
-      alert(`댓글 수정 실패: ${apiErrorMessage}`);
-    } finally {
-      setIsLoadingForm(false);
-    }
+    } catch (err) { /* ... */ }
+    finally { setIsLoadingForm(false); }
   };
 
   // 댓글 삭제 핸들러 (실제 API 호출)
   const handleDeleteComment = async (commentIdToDelete) => {
-    if (!targetId) { /* ... 이전과 동일한 null 체크 ... */ return; }
+    if (!commentIdToDelete) return;
     if (window.confirm("정말로 이 댓글을 삭제하시겠습니까?")) {
-      setIsLoading(true); setError(null); // 목록 전체에 영향이 갈 수 있으므로 setIsLoading 사용
+      setIsLoading(true); setError(null);
       try {
-        await axios.delete(`${API_BASE_URL}/mateFoodPost/${targetId}/comments/${commentIdToDelete}`);
+        await axios.delete(`${API_BASE_URL}/comments/${commentIdToDelete}`);
         fetchComments();
         alert("댓글이 성공적으로 삭제되었습니다.");
-      } catch (err) {
-        console.error("댓글 삭제 API 호출 실패:", err.response || err.message || err);
-        const apiErrorMessage = err.response?.data?.message || err.response?.data || err.message || "댓글 삭제 중 서버 오류가 발생했습니다.";
-        setError(apiErrorMessage);
-        alert(`댓글 삭제 실패: ${apiErrorMessage}`);
-      } finally {
-        setIsLoading(false);
-      }
+      } catch (err) { /* ... */ }
+      finally { setIsLoading(false); }
     }
   };
   

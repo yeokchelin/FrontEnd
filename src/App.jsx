@@ -18,7 +18,6 @@ import Header from "./components/main/Header";
 import MetroMap from "./components/main/MetroMap";
 import StationInfo from "./components/main/StationInfo";
 import MyPage from "./pages/mypage/MyPage";
-import PollDetailPage from "./pages/poll/PollDetailPage";
 import FreeBoardPage from "./pages/board/FreeBoardPage";
 import MealMateBoardPage from "./pages/board/MealMateBoardPage";
 import ReviewPage from "./pages/review/ReviewPage"; // ⭐ 경로 및 컴포넌트 이름 확인 (ReviewBoardPage -> ReviewPage)
@@ -26,6 +25,7 @@ import StoreManagementPage from "./pages/storemanagement/StoreManagementPage";
 import ChangeGradePage from "./pages/grade/ChangeGradePage";
 import KakaoTokenHandler from "./pages/KakaoTokenHandler";
 import StoreDetailPage from "./pages/storedetail/StoreDetailPage.jsx"; // ⭐ 경로 및 컴포넌트 이름 확인 (StoreDetail -> StoreDetailPage)
+import TodayMenuPage from "./pages/todaymenu/TodayMenuPage";
 
 const ColorModeContext = createContext({ toggleColorMode: () => {} });
 
@@ -113,7 +113,7 @@ function AppContent() {
               }}
             >
               {view === "mypage" ? ( <MyPage setView={setView} /> )
-                : view === "vote" ? ( <PollDetailPage /> )
+                : view === "todayMenu" ? ( <TodayMenuPage /> )
                 : view === "free" ? ( <FreeBoardPage /> )
                 : view === "mate" ? ( <MealMateBoardPage /> )
                 // ⭐️ 리뷰 페이지 렌더링 조건 및 prop 전달
