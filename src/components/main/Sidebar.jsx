@@ -12,6 +12,9 @@ import {
   useTheme,
 } from "@mui/material";
 
+// ❗️ 여기를 수정했습니다: jwt-decode 라이브러리를 이름 내보내기 방식으로 임포트합니다.
+import { jwtDecode } from "jwt-decode";
+
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -19,7 +22,7 @@ import ArticleIcon from '@mui/icons-material/Article';
 import HowToVoteIcon from '@mui/icons-material/HowToVote';
 import ForumIcon from '@mui/icons-material/Forum';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
-import RateReviewIcon from '@mui/icons-material/RateReview';
+// import RateReviewIcon from '@mui/icons-material/RateReview'; // 리뷰 게시판 아이콘 (기존에 제거됨)
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
@@ -37,20 +40,13 @@ export default function SideBar({ setView }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [boardOpen, setBoardOpen] = useState(false);
 
+  // isJwtValid 함수는 이제 jwtDecode를 올바르게 임포트했으므로 정상 작동할 것입니다.
   function isJwtValid(token) {
     try {
       if (!token) return false;
-      const parts = token.split('.');
-      if (parts.length !== 3) return false;
-
-      const base64 = parts[1]
-        .replace(/-/g, '+')
-        .replace(/_/g, '/')
-        .padEnd(parts[1].length + (4 - (parts[1].length % 4)) % 4, '=');
-
-      const payload = JSON.parse(atob(base64));
+      const decodedToken = jwtDecode(token); // jwt-decode 라이브러리 사용
       const now = Math.floor(Date.now() / 1000);
-      return payload.exp && payload.exp > now;
+      return decodedToken.exp && decodedToken.exp > now;
     } catch (err) {
       console.error("JWT decode error:", err);
       return false;
@@ -66,7 +62,7 @@ export default function SideBar({ setView }) {
       localStorage.removeItem("jwt");
       setIsLoggedIn(false);
     }
-  }, []);
+  }, []); // isJwtValid 함수는 useEffect 밖에서 정의되었으므로 의존성 배열에 포함하지 않습니다.
 
   const redirectToKakaoLogin = () => {
     const CLIENT_ID = "7113cca2b7bef1a368f5c1a7bc637d82";
@@ -78,7 +74,7 @@ export default function SideBar({ setView }) {
   const handleLogout = () => {
     localStorage.removeItem("jwt");
     setIsLoggedIn(false);
-    setView("map");
+    setView("map"); // 로그아웃 후 기본 뷰로 이동
   };
 
   const handleBoardClick = () => {
@@ -190,7 +186,8 @@ export default function SideBar({ setView }) {
                 { text: "투표게시판", view: "vote", icon: <HowToVoteIcon fontSize="small" /> },
                 { text: "자유게시판", view: "free", icon: <ForumIcon fontSize="small" /> },
                 { text: "밥친구 구하기", view: "mate", icon: <RestaurantMenuIcon fontSize="small" /> },
-                { text: "리뷰 게시판", view: "review", icon: <RateReviewIcon fontSize="small" /> },
+                // ❗️ 제거: 리뷰 게시판 항목 (기존에 제거됨)
+                // { text: "리뷰 게시판", view: "review", icon: <RateReviewIcon fontSize="small" /> },
               ].map((item) => (
                 <ListItemButton
                   key={item.text}

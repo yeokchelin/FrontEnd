@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { jwtDecode } from "jwt-decode";
 
 import getAppTheme from "./theme/muiTheme.js";
 
@@ -21,67 +22,124 @@ import MyPage from "./pages/mypage/MyPage";
 import PollDetailPage from "./pages/poll/PollDetailPage";
 import FreeBoardPage from "./pages/board/FreeBoardPage";
 import MealMateBoardPage from "./pages/board/MealMateBoardPage";
-import ReviewPage from "./pages/review/ReviewPage"; // ⭐ 경로 및 컴포넌트 이름 확인 (ReviewBoardPage -> ReviewPage)
 import StoreManagementPage from "./pages/storemanagement/StoreManagementPage";
 import ChangeGradePage from "./pages/grade/ChangeGradePage";
-import KakaoTokenHandler from "./pages/KakaoTokenHandler";
-import StoreDetailPage from "./pages/storedetail/StoreDetailPage.jsx"; // ⭐ 경로 및 컴포넌트 이름 확인 (StoreDetail -> StoreDetailPage)
+import KakaoTokenHandler from "./pages/auth/KakaoTokenHandler";
+import StoreDetailPage from "./pages/storedetail/StoreDetailPage.jsx";
 
 const ColorModeContext = createContext({ toggleColorMode: () => {} });
 
 function AppContent() {
   const [selectedStation, setSelectedStation] = useState(null);
   const [view, setView] = useState("map");
-  const [selectedRestaurant, setSelectedRestaurant] = useState(null); // StationInfo에서 선택된 Restaurant 객체 (id, name 등)
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedRestaurantForReview, setSelectedRestaurantForReview] = useState(null); // ⭐️ 리뷰 대상 Restaurant 객체 상태
+  const [selectedRestaurantForReview, setSelectedRestaurantForReview] = useState(null);
+
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUserNickname, setCurrentUserNickname] = useState(null);
+  const [currentUserAvatarUrl, setCurrentUserAvatarUrl] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const theme = useTheme();
   const colorMode = useContext(ColorModeContext);
 
+  const loadUserInfoFromLocalStorage = useCallback(() => {
+    const token = localStorage.getItem("jwt");
+    const storedUserId = localStorage.getItem("currentUserId");
+    const storedNickname = localStorage.getItem("currentUserNickname");
+    const storedAvatarUrl = localStorage.getItem("currentUserAvatarUrl");
+
+    if (token && storedUserId && storedNickname) {
+      try {
+        const decodedToken = jwtDecode(token);
+        const now = Math.floor(Date.now() / 1000);
+
+        if (decodedToken.exp > now) {
+          const numericUserId = Number(storedUserId);
+
+          if (!isNaN(numericUserId)) {
+            setCurrentUserId(numericUserId);
+            setCurrentUserNickname(storedNickname);
+            setCurrentUserAvatarUrl(storedAvatarUrl || decodedToken.profileImage || "https://via.placeholder.com/40/CCCCCC/FFFFFF?Text=U");
+            setIsLoggedIn(true);
+          } else {
+            clearUserInfo();
+          }
+        } else {
+          clearUserInfo();
+        }
+      } catch (error) {
+        clearUserInfo();
+      }
+    } else {
+      clearUserInfo();
+    }
+  }, []);
+
+  const clearUserInfo = useCallback(() => {
+    localStorage.removeItem("jwt");
+    localStorage.removeItem("currentUserId");
+    localStorage.removeItem("currentUserNickname");
+    localStorage.removeItem("currentUserAvatarUrl");
+    setCurrentUserId(null);
+    setCurrentUserNickname(null);
+    setCurrentUserAvatarUrl(null);
+    setIsLoggedIn(false);
+  }, []);
+
+  useEffect(() => {
+    loadUserInfoFromLocalStorage();
+
+    const handleStorageChange = (event) => {
+      if (event.key === 'jwt' || event.key === 'currentUserId' || event.key === 'currentUserNickname') {
+        loadUserInfoFromLocalStorage();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [loadUserInfoFromLocalStorage]);
+
+
   const handleRestaurantSelect = useCallback((restaurant) => {
-    console.log('[AppContent] StationInfo에서 식당 선택됨 (handleRestaurantSelect):', restaurant);
-    setSelectedRestaurant(restaurant); // Restaurant 객체 저장
+    setSelectedRestaurant(restaurant);
     setView("storeDetail");
   }, []);
 
   const handleBackFromDetail = useCallback(() => {
-    console.log('[AppContent] 상세 페이지에서 목록/맵으로 돌아가기');
-    setView("map"); // 또는 이전 뷰로 설정
+    setView("map");
     setSelectedRestaurant(null);
-    setSelectedRestaurantForReview(null); // 상세에서 돌아올 때 리뷰 대상도 초기화
-    // navigate('/'); // 라우터 사용 시 홈으로 이동
+    setSelectedRestaurantForReview(null);
   }, []);
 
-  // ⭐️ StoreDetailPage에서 리뷰 보기 클릭 시 호출될 함수
-  const handleViewRestaurantReviews = useCallback((restaurant) => { // ⭐ Restaurant 객체를 인자로 받음 (id, name 등 포함)
-    console.log('[AppContent] 리뷰 보기 선택됨 (handleViewRestaurantReviews):', restaurant);
-    setSelectedRestaurantForReview(restaurant); // 리뷰를 볼 식당 정보 저장
-    setView("review"); // 리뷰 페이지로 view 상태 변경
+  const handleViewRestaurantReviews = useCallback((restaurant) => {
+    setSelectedRestaurantForReview(restaurant);
+    setView("review");
   }, []);
 
-  // ⭐️ ReviewPage에서 뒤로가기 클릭 시 호출될 함수
   const handleBackFromReview = useCallback(() => {
-    console.log('[AppContent] 리뷰 페이지에서 식당 상세로 돌아가기');
-    setView("storeDetail"); // 식당 상세 페이지로 돌아가기
-    // selectedRestaurantForReview는 그대로 두어 StoreDetail이 다시 렌더링될 때 사용할 수 있도록 합니다.
-    // 필요하다면 setSelectedRestaurantForReview(null);
+    setView("storeDetail");
   }, []);
 
 
   useEffect(() => {
-    // 역이 변경되면, 현재 선택된 식당 및 리뷰 대상 식당 초기화
     setSelectedRestaurant(null);
     setSelectedRestaurantForReview(null);
-    // 필요하다면 setView("map"); 추가하여 기본 뷰로 이동
   }, [selectedStation]);
 
   return (
     <Routes>
       <Route path="/kakao/token" element={<KakaoTokenHandler />} />
+
       <Route path="*" element={(
         <Box sx={{ display: "flex", height: "100vh", width: "100vw", overflow: "hidden", bgcolor: 'background.default' }}>
-          <Sidebar setView={setView} />
+          <Sidebar
+            setView={setView}
+            isLoggedIn={isLoggedIn}
+            clearUserInfo={clearUserInfo}
+          />
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
             <Box
               component="header"
@@ -114,23 +172,31 @@ function AppContent() {
             >
               {view === "mypage" ? ( <MyPage setView={setView} /> )
                 : view === "vote" ? ( <PollDetailPage /> )
-                : view === "free" ? ( <FreeBoardPage /> )
-                : view === "mate" ? ( <MealMateBoardPage /> )
-                // ⭐️ 리뷰 페이지 렌더링 조건 및 prop 전달
+                : view === "free" ? ( <FreeBoardPage
+                                        currentUserId={currentUserId}
+                                        currentUserNickname={currentUserNickname}
+                                        currentUserAvatarUrl={currentUserAvatarUrl}
+                                      /> )
+                : view === "mate" ? ( <MealMateBoardPage
+                                        currentUserId={currentUserId}
+                                        currentUserNickname={currentUserNickname}
+                                        currentUserAvatarUrl={currentUserAvatarUrl}
+                                      /> )
                 : view === "review" && selectedRestaurantForReview ? (
-                  <ReviewPage // ⭐ 컴포넌트 이름 ReviewBoardPage -> ReviewPage
-                    restaurant={selectedRestaurantForReview} // Restaurant 객체 (id, name 필드 포함)
-                    onBack={handleBackFromReview} // ⭐ ReviewPage에서 뒤로가기 클릭 시 호출될 함수 전달
-                  />
+                  <Box>리뷰 페이지 (구현 예정)</Box>
                 )
                 : view === "manageStore" ? ( <StoreManagementPage /> )
-                : view === "changeGrade" ? ( <ChangeGradePage /> )
-                // ⭐️ StoreDetailPage 렌더링 조건 및 prop 전달
+                : view === "changeGrade" ? ( <ChangeGradePage
+                                                currentUserId={currentUserId}
+                                            /> )
                 : view === "storeDetail" && selectedRestaurant ? (
-                  <StoreDetailPage // ⭐ 컴포넌트 이름 StoreDetail -> StoreDetailPage
-                    restaurantId={selectedRestaurant.id} // Restaurant 객체의 PK 필드명은 'id'이므로 selectedRestaurant.id로 넘김
+                  <StoreDetailPage
+                    restaurantId={selectedRestaurant.id}
                     onBack={handleBackFromDetail}
-                    onViewReviews={handleViewRestaurantReviews} // ⭐ 콜백 함수 전달
+                    onViewReviews={handleViewRestaurantReviews}
+                    currentUserId={currentUserId}
+                    currentUserNickname={currentUserNickname}
+                    currentUserAvatarUrl={currentUserAvatarUrl}
                   />
                 ) : (
                   <>
@@ -139,9 +205,7 @@ function AppContent() {
                       <Box sx={{ mt: 3, width: "100%", maxWidth: "900px" }}>
                         <StationInfo
                           stationName={selectedStation.name}
-                          onRestaurantSelect={handleRestaurantSelect} // StationInfo에서 선택된 식당 (Restaurant 객체) 전달
-                          // Header의 selectedCategory를 StationInfo에 전달하여 필터링에 사용하려면
-                          // selectedCategoryFromHeader={selectedCategory} 와 같이 전달하고 StationInfo 내부 로직 수정 필요
+                          onRestaurantSelect={handleRestaurantSelect}
                         />
                       </Box>
                     )}
@@ -168,9 +232,6 @@ export default function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        {/* BrowserRouter는 App.jsx를 감싸는 index.js나 main.jsx에 있어야 합니다. */}
-        {/* 만약 App.jsx가 최상위라면 <BrowserRouter>로 <AppContent />를 감싸야 합니다. */}
-        {/* 현재 코드에는 BrowserRouter가 없으므로, 이미 외부에 있다고 가정합니다. */}
         <AppContent />
       </ThemeProvider>
     </ColorModeContext.Provider>
