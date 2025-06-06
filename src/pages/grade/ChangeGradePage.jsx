@@ -184,7 +184,7 @@ export default function ChangeGradePage() {
     try {
       await axios.delete(`/api/store/${id}`);
 
-      const updatedStores = stores.filter((store) => store.id !== id);
+      const updatedStores = stores.filter((store) => store.storeId !== id);
       setStores(updatedStores);
 
       localStorage.setItem('userRegisteredStores', JSON.stringify(updatedStores));
@@ -307,10 +307,13 @@ export default function ChangeGradePage() {
           </Box>
           <List>
             {stores.map((store, idx) => (
-              <React.Fragment key={store.id || `store-${idx}`}>
+              <React.Fragment key={store.storeId || `store-${idx}`}>
                 <ListItem
                   secondaryAction={
-                    <IconButton onClick={() => handleDeleteStore(store.id)}>
+                    <IconButton onClick={() => {
+                      console.log("삭제할 store id:", store.storeId, store);
+                      handleDeleteStore(store.storeId)
+                      }}>
                       <DeleteIcon color="error" />
                     </IconButton>
                   }
