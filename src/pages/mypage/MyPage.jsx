@@ -1,10 +1,17 @@
-// src/pages/Mypage.jsx
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Paper, List, ListItem, ListItemText, Button, Divider, ListItemIcon } from "@mui/material";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import {
+  Box, Typography, Paper, List, ListItem, ListItemText, Button, Divider, ListItemIcon
+} from "@mui/material";
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import ArticleIcon from '@mui/icons-material/Article';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
+
+import MyActivityModal from "../../components/mypage/MyActivityModal"; // 경로 맞게 수정
 
 const SectionPaper = ({ title, icon, children }) => (
   <Paper
@@ -27,53 +34,103 @@ const SectionPaper = ({ title, icon, children }) => (
 );
 
 export default function Mypage({ setView }) {
-  const [reviews, setReviews] = useState([]);
+  const navigate = useNavigate();
+  const [userId, setUserId] = useState(null);
+  const [myReviews, setMyReviews] = useState([]);
+  const [myMatePosts, setMyMatePosts] = useState([]);
+  const [myFreePosts, setMyFreePosts] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [userLevel, setUserLevel] = useState("일반 회원");
   const [hasStores, setHasStores] = useState(false);
 
+  // 모달 관련 상태
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+
   useEffect(() => {
-    // 더미 데이터 로드 (실제 API 호출로 대체 예정)
-    setReviews([
-      { id: 1, place: "강남 맛집", content: "진짜 맛있었어요! 다음에도 방문할 예정입니다." },
-      { id: 2, place: "홍대 유명 카페", content: "분위기도 좋고 커피 맛도 일품이었어요." },
-    ]);
-    setFavorites([
-      { id: 1, name: "이태원 파스타 전문점" },
-      { id: 2, name: "한남동 디저트 맛집" },
-    ]);
+    const id = localStorage.getItem("currentUserId");
+    setUserId(id);
 
     let currentLevel = "일반 회원";
     let storesExist = false;
     try {
       const savedStoresData = localStorage.getItem('userRegisteredStores');
-      console.log("[Mypage Debug] 로컬 스토리지 'userRegisteredStores' 값:", savedStoresData); // ★★★ 추가 로그 ★★★
-
       if (savedStoresData) {
         const registeredStores = JSON.parse(savedStoresData);
-        console.log("[Mypage Debug] 파싱된 registeredStores:", registeredStores); // ★★★ 추가 로그 ★★★
-
         if (Array.isArray(registeredStores) && registeredStores.length > 0) {
           currentLevel = "점주 회원";
           storesExist = true;
-          console.log("[Mypage Debug] 점주 회원 조건 충족: storesExist = true"); // ★★★ 추가 로그 ★★★
-        } else {
-          console.log("[Mypage Debug] 'userRegisteredStores'는 있지만, 배열이 아니거나 비어있습니다."); // ★★★ 추가 로그 ★★★
         }
-      } else {
-        console.log("[Mypage Debug] 'userRegisteredStores' 로컬 스토리지에 값이 없습니다."); // ★★★ 추가 로그 ★★★
       }
-    } catch (e) {
-      console.error("Mypage: 로컬 스토리지 로딩/파싱 실패", e);
-    }
+    } catch (e) {}
     setUserLevel(currentLevel);
     setHasStores(storesExist);
-    console.log("[Mypage Debug] 최종 userLevel:", currentLevel, "hasStores:", storesExist); // ★★★ 추가 로그 ★★★
-  }, []); // 마운트 시 한 번만 실행
 
-  const handleManageStore = () => {
-    setView("manageStore");
+    const fav = localStorage.getItem('userFavorites');
+    if (fav) {
+      setFavorites(JSON.parse(fav));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    axios.get(`/api/reviews/user/${userId}`)
+      .then(res => setMyReviews(res.data || []))
+      .catch(() => setMyReviews([]));
+    axios.get(`/api/boardmatefood/user/${userId}`)
+      .then(res => {
+        console.log('밥친구 데이터:', res.data);
+        setMyMatePosts(res.data || [])
+      })
+      .catch(() => setMyMatePosts([]));
+    axios.get(`/api/freeboard/user/${userId}`)
+      .then(res => {
+          console.log('자유게시판 데이터:', res.data);
+         setMyFreePosts(res.data || [])
+        })
+      .catch(() => setMyFreePosts([]));
+  }, [userId]);
+
+  const handleManageStore = () => setView("manageStore");
+
+  // 🔥 활동 내역 클릭 시 모달 띄우기
+  const handleGoToDetail = (type, data) => {
+    setSelectedItem({ type, data });
+    setModalOpen(true);
   };
+
+  const getPreviewText = (text) => {
+    if (!text) return "";
+    return text.length > 20 ? text.substring(0, 20) + "..." : text;
+  };
+
+  // 🔥 반드시 data: r/p/f로 원본데이터를 넣어준다!
+  const myActivities = [
+    ...myReviews.map(r => ({
+      id: r.id,
+      type: '리뷰',
+      icon: <RateReviewIcon />,
+      title: r.place || r.restaurantName || "리뷰",
+      content: getPreviewText(r.content),
+      data: r,
+    })),
+    ...myMatePosts.map(p => ({
+      id: p.id,
+      type: '밥친구',
+      icon: <RestaurantIcon />,
+      title: p.title,
+      content: getPreviewText(p.content),
+      data: p,
+    })),
+    ...myFreePosts.map(f => ({
+      id: f.id,
+      type: '자유게시판',
+      icon: <ArticleIcon />,
+      title: f.title,
+      content: getPreviewText(f.content),
+      data: f,
+    }))
+  ];
 
   return (
     <Box
@@ -90,25 +147,44 @@ export default function Mypage({ setView }) {
         마이페이지
       </Typography>
 
-      <Box sx={{ width: '100%', maxWidth: 'lg', display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 3, md: 3 } }}>
-        <Box sx={{ flex: 1, width: '100%' }}>
+      {/* 나의 활동 내역 */}
+      <Box sx={{
+        width: '100%',
+        maxWidth: 'lg',
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: { xs: 3, md: 3 }
+      }}>
+        <Box sx={{ flex: 1 }}>
           <SectionPaper title="나의 활동 내역" icon={<RateReviewIcon />}>
-            {reviews.length > 0 ? (
+            {myActivities.length > 0 ? (
               <List disablePadding>
-                {reviews.map((review, index) => (
-                  <React.Fragment key={review.id}>
-                    <ListItem sx={{ px: 0, flexDirection: 'column', alignItems: 'flex-start' }}>
-                      <Typography component="strong" sx={{ fontWeight: 'medium', color: 'text.primary' }}>{review.place}</Typography>
-                      <ListItemText secondary={review.content} sx={{mt: 0.5}} />
+                {myActivities.map((act, index) => (
+                  <React.Fragment key={act.type + act.id}>
+                    <ListItem
+                      button
+                      sx={{ px: 0, flexDirection: 'column', alignItems: 'flex-start', cursor: "pointer" }}
+                      onClick={() => handleGoToDetail(act.type, act.data)}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <ListItemIcon sx={{ minWidth: 30 }}>{act.icon}</ListItemIcon>
+                        <Typography component="strong" sx={{ fontWeight: 'medium', color: 'text.primary', ml: 0.5 }}>{act.title}</Typography>
+                        <Typography variant="caption" sx={{ ml: 1, color: "text.secondary" }}>{act.type}</Typography>
+                      </Box>
+                      <ListItemText secondary={act.content} sx={{ mt: 0.5 }} />
                     </ListItem>
-                    {index < reviews.length - 1 && <Divider component="li" sx={{my: 1}} />}
+                    {index < myActivities.length - 1 && <Divider component="li" sx={{ my: 1 }} />}
                   </React.Fragment>
                 ))}
               </List>
-            ) : ( <Typography variant="body2" color="text.secondary">작성한 리뷰가 없습니다.</Typography> )}
+            ) : (
+              <Typography variant="body2" color="text.secondary">아직 활동 내역이 없습니다.</Typography>
+            )}
           </SectionPaper>
         </Box>
-        <Box sx={{ flex: 1, width: '100%' }}>
+
+        {/* 찜한 가게(더미 데이터 그대로) */}
+        <Box sx={{ flex: 1 }}>
           <SectionPaper title="찜한 가게" icon={<FavoriteIcon />}>
             {favorites.length > 0 ? (
               <List disablePadding>
@@ -117,29 +193,48 @@ export default function Mypage({ setView }) {
                     <ListItem sx={{ px: 0 }}>
                       <ListItemText primary={fav.name} />
                     </ListItem>
-                    {index < favorites.length - 1 && <Divider component="li" sx={{my: 1}}/>}
+                    {index < favorites.length - 1 && <Divider component="li" sx={{ my: 1 }} />}
                   </React.Fragment>
                 ))}
               </List>
-            ) : ( <Typography variant="body2" color="text.secondary">찜한 가게가 없습니다.</Typography> )}
+            ) : (
+              <Typography variant="body2" color="text.secondary">찜한 가게가 없습니다.</Typography>
+            )}
           </SectionPaper>
         </Box>
       </Box>
 
-      <Box sx={{ width: '100%', maxWidth: 'lg', display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: { xs: 2, sm: 3 }, mt: 1, }}>
-        <Box sx={{ flex: {sm: 1} }}>
+      {/* 회원등급/내 가게 관리 */}
+      <Box sx={{
+        width: '100%',
+        maxWidth: 'lg',
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between',
+        alignItems: { xs: 'stretch', sm: 'center' },
+        gap: { xs: 2, sm: 3 }, mt: 1,
+      }}>
+        <Box sx={{ flex: { sm: 1 } }}>
           <SectionPaper title="회원 등급" icon={<AdminPanelSettingsIcon />}>
             <Typography variant="h6" sx={{ color: userLevel === "점주 회원" ? 'primary.main' : 'text.secondary', fontWeight: 'bold' }}>
               {userLevel}
             </Typography>
           </SectionPaper>
         </Box>
-        {hasStores && ( // hasStores가 true일 때만 버튼 표시
-          <Button variant="contained" color="primary" size="large" onClick={handleManageStore} startIcon={<StorefrontIcon />} sx={{ py: 1.5, fontWeight: 'bold', width: { xs: '100%', sm: 'auto' } }}>
+        {hasStores && (
+          <Button variant="contained" color="primary" size="large" onClick={handleManageStore} startIcon={<StorefrontIcon />}
+            sx={{ py: 1.5, fontWeight: 'bold', width: { xs: '100%', sm: 'auto' } }}>
             내 가게 관리
           </Button>
         )}
       </Box>
+
+      {/* 팝업 상세 모달 */}
+      <MyActivityModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        item={selectedItem}
+      />
     </Box>
   );
 }

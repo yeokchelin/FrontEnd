@@ -60,6 +60,7 @@ const ReviewPage = ({ restaurant, onBack, currentUserId, currentUserNickname, cu
         }
 
         const newReviewPayload = {
+        userId: currentUserId,
         author: currentUserNickname,
         title: formDataFromChild.title,
         content: formDataFromChild.content,

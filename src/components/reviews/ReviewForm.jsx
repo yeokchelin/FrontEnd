@@ -71,7 +71,7 @@ export default function ReviewForm({ onAddReview, restaurantId, currentUserId, c
 
         try {
             // onAddReview 함수가 JWT 토큰을 자체적으로 처리하도록 설계되었으므로, 여기서는 페이로드만 전달
-            await onAddReview({ title, content, rate }); // title 필드를 백엔드에 보내려면 ReviewPage의 handleAddReview에서도 처리해야 함
+            await onAddReview({ title, content, rate, userId: currentUserId, author: currentUserNickname }); // title 필드를 백엔드에 보내려면 ReviewPage의 handleAddReview에서도 처리해야 함
             
             // 폼 필드 초기화 (성공 시에만)
             setTitle('');

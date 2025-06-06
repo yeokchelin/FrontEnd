@@ -256,15 +256,16 @@ export default function StoreDetailPage({ restaurantId, onBack, onViewReviews, c
               sx={{ fontWeight: 'medium', '.MuiChip-label': { pl:0.5 } }}
             />
           )}
-          <Chip
-            icon={<RateReviewIcon />}
-            label={`리뷰 ${typeof reviewCount === 'number' ? reviewCount : 0}개`}
-            variant="outlined"
-            size="medium"
-            sx={{ fontWeight: 'medium', cursor: 'pointer' }}
-            onClick={handleReviewChipClick}
-          />
-
+          {typeof reviewCount === 'number' && reviewCount > 0 && (
+            <Chip
+              icon={<RateReviewIcon />}
+              label={`리뷰 ${reviewCount}개`}
+              variant="outlined"
+              size="medium"
+              sx={{ fontWeight: 'medium', cursor: 'pointer' }}
+              onClick={handleReviewChipClick}
+            />
+          )}
           {favoriteCount > 0 && (
             <Chip
               icon={<FavoriteIcon sx={{ color: 'error.main !important' }} />}
