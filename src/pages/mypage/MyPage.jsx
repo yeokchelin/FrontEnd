@@ -29,10 +29,11 @@ const SectionPaper = ({ title, icon, children }) => (
 export default function Mypage({ setView }) {
   const [reviews, setReviews] = useState([]);
   const [favorites, setFavorites] = useState([]);
-  const [userLevel, setUserLevel] = useState("일반 회원"); // 초기값
+  const [userLevel, setUserLevel] = useState("일반 회원");
   const [hasStores, setHasStores] = useState(false);
 
   useEffect(() => {
+    // 더미 데이터 로드 (실제 API 호출로 대체 예정)
     setReviews([
       { id: 1, place: "강남 맛집", content: "진짜 맛있었어요! 다음에도 방문할 예정입니다." },
       { id: 2, place: "홍대 유명 카페", content: "분위기도 좋고 커피 맛도 일품이었어요." },
@@ -46,19 +47,28 @@ export default function Mypage({ setView }) {
     let storesExist = false;
     try {
       const savedStoresData = localStorage.getItem('userRegisteredStores');
+      console.log("[Mypage Debug] 로컬 스토리지 'userRegisteredStores' 값:", savedStoresData); // ★★★ 추가 로그 ★★★
+
       if (savedStoresData) {
         const registeredStores = JSON.parse(savedStoresData);
+        console.log("[Mypage Debug] 파싱된 registeredStores:", registeredStores); // ★★★ 추가 로그 ★★★
+
         if (Array.isArray(registeredStores) && registeredStores.length > 0) {
           currentLevel = "점주 회원";
           storesExist = true;
+          console.log("[Mypage Debug] 점주 회원 조건 충족: storesExist = true"); // ★★★ 추가 로그 ★★★
+        } else {
+          console.log("[Mypage Debug] 'userRegisteredStores'는 있지만, 배열이 아니거나 비어있습니다."); // ★★★ 추가 로그 ★★★
         }
+      } else {
+        console.log("[Mypage Debug] 'userRegisteredStores' 로컬 스토리지에 값이 없습니다."); // ★★★ 추가 로그 ★★★
       }
     } catch (e) {
       console.error("Mypage: 로컬 스토리지 로딩/파싱 실패", e);
-      // currentLevel과 storesExist는 기본값 유지
     }
     setUserLevel(currentLevel);
     setHasStores(storesExist);
+    console.log("[Mypage Debug] 최종 userLevel:", currentLevel, "hasStores:", storesExist); // ★★★ 추가 로그 ★★★
   }, []); // 마운트 시 한 번만 실행
 
   const handleManageStore = () => {
@@ -80,7 +90,7 @@ export default function Mypage({ setView }) {
         마이페이지
       </Typography>
 
-      <Box /* 리뷰 및 찜한 가게 섹션 */ sx={{ width: '100%', maxWidth: 'lg', display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 3, md: 3 } }}>
+      <Box sx={{ width: '100%', maxWidth: 'lg', display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 3, md: 3 } }}>
         <Box sx={{ flex: 1, width: '100%' }}>
           <SectionPaper title="나의 활동 내역" icon={<RateReviewIcon />}>
             {reviews.length > 0 ? (
@@ -116,7 +126,7 @@ export default function Mypage({ setView }) {
         </Box>
       </Box>
 
-      <Box /* 회원 등급 및 가게 관리 버튼 섹션 */ sx={{ width: '100%', maxWidth: 'lg', display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: { xs: 2, sm: 3 }, mt: 1, }}>
+      <Box sx={{ width: '100%', maxWidth: 'lg', display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: { xs: 2, sm: 3 }, mt: 1, }}>
         <Box sx={{ flex: {sm: 1} }}>
           <SectionPaper title="회원 등급" icon={<AdminPanelSettingsIcon />}>
             <Typography variant="h6" sx={{ color: userLevel === "점주 회원" ? 'primary.main' : 'text.secondary', fontWeight: 'bold' }}>
@@ -124,7 +134,7 @@ export default function Mypage({ setView }) {
             </Typography>
           </SectionPaper>
         </Box>
-        {hasStores && (
+        {hasStores && ( // hasStores가 true일 때만 버튼 표시
           <Button variant="contained" color="primary" size="large" onClick={handleManageStore} startIcon={<StorefrontIcon />} sx={{ py: 1.5, fontWeight: 'bold', width: { xs: '100%', sm: 'auto' } }}>
             내 가게 관리
           </Button>

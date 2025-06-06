@@ -6,10 +6,17 @@ import {
   IconButton,
   ThemeProvider,
   CssBaseline,
-  useTheme
+  useTheme,
+  Modal,
+  Paper,
+  Typography,
+  Alert, CircularProgress,
+  List, ListItemButton, ListItemText, Divider
 } from "@mui/material";
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import CloseIcon from '@mui/icons-material/Close';
+import { jwtDecode } from "jwt-decode";
 
 import getAppTheme from "./theme/muiTheme.js";
 
@@ -17,71 +24,149 @@ import Sidebar from "./components/main/Sidebar";
 import Header from "./components/main/Header";
 import MetroMap from "./components/main/MetroMap";
 import StationInfo from "./components/main/StationInfo";
+
 import MyPage from "./pages/mypage/MyPage";
 import FreeBoardPage from "./pages/board/FreeBoardPage";
 import MealMateBoardPage from "./pages/board/MealMateBoardPage";
-import ReviewPage from "./pages/review/ReviewPage"; // ⭐ 경로 및 컴포넌트 이름 확인 (ReviewBoardPage -> ReviewPage)
 import StoreManagementPage from "./pages/storemanagement/StoreManagementPage";
 import ChangeGradePage from "./pages/grade/ChangeGradePage";
-import KakaoTokenHandler from "./pages/KakaoTokenHandler";
-import StoreDetailPage from "./pages/storedetail/StoreDetailPage.jsx"; // ⭐ 경로 및 컴포넌트 이름 확인 (StoreDetail -> StoreDetailPage)
-import TodayMenuPage from "./pages/todaymenu/TodayMenuPage";
+import KakaoTokenHandler from "./pages/auth/KakaoTokenHandler";
+import StoreDetailPage from "./pages/storedetail/StoreDetailPage.jsx"; // 경로 확인
+import ReviewPage from "./pages/review/ReviewPage"; // ✨ ReviewPage 임포트 추가
+import TodayMenuPage from "./pages/todaymenu/TodayMenuPage.jsx";
 
 const ColorModeContext = createContext({ toggleColorMode: () => {} });
 
 function AppContent() {
   const [selectedStation, setSelectedStation] = useState(null);
   const [view, setView] = useState("map");
-  const [selectedRestaurant, setSelectedRestaurant] = useState(null); // StationInfo에서 선택된 Restaurant 객체 (id, name 등)
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedRestaurantForReview, setSelectedRestaurantForReview] = useState(null); // ⭐️ 리뷰 대상 Restaurant 객체 상태
+  const [selectedRestaurantForReview, setSelectedRestaurantForReview] = useState(null); // ReviewPage로 넘겨줄 restaurant 객체
+
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUserNickname, setCurrentUserNickname] = useState(null);
+  const [currentUserAvatarUrl, setCurrentUserAvatarUrl] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const [openStationInfoModal, setOpenStationInfoModal] = useState(false);
 
   const theme = useTheme();
   const colorMode = useContext(ColorModeContext);
 
+  const loadUserInfoFromLocalStorage = useCallback(() => {
+    const token = localStorage.getItem("jwt");
+    const storedUserId = localStorage.getItem("currentUserId");
+    const storedNickname = localStorage.getItem("currentUserNickname");
+    const storedAvatarUrl = localStorage.getItem("currentUserAvatarUrl");
+
+    if (token && storedUserId && storedNickname) {
+      try {
+        const decodedToken = jwtDecode(token);
+        const now = Math.floor(Date.now() / 1000);
+
+        if (decodedToken.exp > now) {
+          const numericUserId = Number(storedUserId);
+
+          if (!isNaN(numericUserId)) {
+            setCurrentUserId(numericUserId);
+            setCurrentUserNickname(storedNickname);
+            setCurrentUserAvatarUrl(storedAvatarUrl || decodedToken.profileImage || "https://via.placeholder.com/40/CCCCCC/FFFFFF?Text=U");
+            setIsLoggedIn(true);
+          } else {
+            clearUserInfo();
+          }
+        } else {
+          clearUserInfo();
+        }
+      } catch (error) {
+        clearUserInfo();
+      }
+    } else {
+      clearUserInfo();
+    }
+  }, []);
+
+  const clearUserInfo = useCallback(() => {
+    localStorage.removeItem("jwt");
+    localStorage.removeItem("currentUserId");
+    localStorage.removeItem("currentUserNickname");
+    localStorage.removeItem("currentUserAvatarUrl");
+    setCurrentUserId(null);
+    setCurrentUserNickname(null);
+    setCurrentUserAvatarUrl(null);
+    setIsLoggedIn(false);
+  }, []);
+
+  useEffect(() => {
+    loadUserInfoFromLocalStorage();
+
+    const handleStorageChange = (event) => {
+      if (event.key === 'jwt' || event.key === 'currentUserId' || event.key === 'currentUserNickname') {
+        loadUserInfoFromLocalStorage();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [loadUserInfoFromLocalStorage]);
+
+
   const handleRestaurantSelect = useCallback((restaurant) => {
-    console.log('[AppContent] StationInfo에서 식당 선택됨 (handleRestaurantSelect):', restaurant);
-    setSelectedRestaurant(restaurant); // Restaurant 객체 저장
+    setSelectedRestaurant(restaurant);
+    setOpenStationInfoModal(false);
     setView("storeDetail");
   }, []);
 
   const handleBackFromDetail = useCallback(() => {
-    console.log('[AppContent] 상세 페이지에서 목록/맵으로 돌아가기');
-    setView("map"); // 또는 이전 뷰로 설정
+    setView("map");
     setSelectedRestaurant(null);
-    setSelectedRestaurantForReview(null); // 상세에서 돌아올 때 리뷰 대상도 초기화
-    // navigate('/'); // 라우터 사용 시 홈으로 이동
+    setSelectedRestaurantForReview(null); // 상세에서 맵으로 돌아갈 때 리뷰 관련 정보 초기화
   }, []);
 
-  // ⭐️ StoreDetailPage에서 리뷰 보기 클릭 시 호출될 함수
-  const handleViewRestaurantReviews = useCallback((restaurant) => { // ⭐ Restaurant 객체를 인자로 받음 (id, name 등 포함)
-    console.log('[AppContent] 리뷰 보기 선택됨 (handleViewRestaurantReviews):', restaurant);
-    setSelectedRestaurantForReview(restaurant); // 리뷰를 볼 식당 정보 저장
-    setView("review"); // 리뷰 페이지로 view 상태 변경
+  const handleViewRestaurantReviews = useCallback((restaurant) => {
+    setSelectedRestaurantForReview(restaurant); // StoreDetailPage에서 넘겨받은 restaurant 객체를 저장
+    setView("review"); // 뷰를 "review"로 설정
   }, []);
 
-  // ⭐️ ReviewPage에서 뒤로가기 클릭 시 호출될 함수
   const handleBackFromReview = useCallback(() => {
-    console.log('[AppContent] 리뷰 페이지에서 식당 상세로 돌아가기');
-    setView("storeDetail"); // 식당 상세 페이지로 돌아가기
-    // selectedRestaurantForReview는 그대로 두어 StoreDetail이 다시 렌더링될 때 사용할 수 있도록 합니다.
-    // 필요하다면 setSelectedRestaurantForReview(null);
+    // 리뷰 페이지에서 상세 페이지로 돌아갈 때, StoreDetailPage가 다시 보여야 하므로 view를 "storeDetail"로 설정
+    setView("storeDetail");
+    // setSelectedRestaurantForReview는 StoreDetailPage를 렌더링할 때 필요 없지만,
+    // StoreDetailPage로 돌아가도 restaurantId는 남아있으므로 그대로 둠.
+    // 필요에 따라 setSelectedRestaurantForReview(null);을 추가할 수 있습니다.
   }, []);
-
 
   useEffect(() => {
-    // 역이 변경되면, 현재 선택된 식당 및 리뷰 대상 식당 초기화
+    if (view === 'map') {
+      setSelectedRestaurant(null);
+      setSelectedRestaurantForReview(null);
+    }
+  }, [selectedStation, view]);
+
+  const handleMapStationSelect = useCallback((stationObject) => {
+    setSelectedStation(stationObject);
+    setOpenStationInfoModal(true);
     setSelectedRestaurant(null);
-    setSelectedRestaurantForReview(null);
-    // 필요하다면 setView("map"); 추가하여 기본 뷰로 이동
-  }, [selectedStation]);
+  }, []);
+
+  const handleCloseStationInfoModal = useCallback(() => {
+    setOpenStationInfoModal(false);
+    setSelectedStation(null);
+  }, []);
 
   return (
     <Routes>
-      <Route path="/kakao/token" element={<KakaoTokenHandler />} />
+      <Route path="/kakao/token" element={<KakaoTokenHandler onLoginSuccess={loadUserInfoFromLocalStorage} />} />
+
       <Route path="*" element={(
         <Box sx={{ display: "flex", height: "100vh", width: "100vw", overflow: "hidden", bgcolor: 'background.default' }}>
-          <Sidebar setView={setView} />
+          <Sidebar
+            setView={setView}
+            isLoggedIn={isLoggedIn}
+            clearUserInfo={clearUserInfo}
+          />
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
             <Box
               component="header"
@@ -94,6 +179,7 @@ function AppContent() {
                 <Header
                   onSearchSelect={(station) => {
                     setSelectedStation(station);
+                    setOpenStationInfoModal(true);
                     setView("map");
                   }}
                   onCategoryChange={(category) => setSelectedCategory(category)}
@@ -108,45 +194,95 @@ function AppContent() {
             <Box
               component="main"
               sx={{
-                flex: 1, overflowY: "auto", overflowX: "hidden", display: "flex", flexDirection: "column",
-                alignItems: "center", p: { xs: 1.5, sm: 2, md: 3 },
+                flex: 1,
+                overflowY: "auto",
+                overflowX: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                p: { xs: 1.5, sm: 2, md: 3 },
               }}
             >
               {view === "mypage" ? ( <MyPage setView={setView} /> )
                 : view === "todayMenu" ? ( <TodayMenuPage /> )
-                : view === "free" ? ( <FreeBoardPage /> )
-                : view === "mate" ? ( <MealMateBoardPage /> )
-                // ⭐️ 리뷰 페이지 렌더링 조건 및 prop 전달
+                : view === "free" ? ( <FreeBoardPage
+                    currentUserId={currentUserId}
+                    currentUserNickname={currentUserNickname}
+                    currentUserAvatarUrl={currentUserAvatarUrl}
+                  /> )
+                : view === "mate" ? ( <MealMateBoardPage
+                    currentUserId={currentUserId}
+                    currentUserNickname={currentUserNickname}
+                    currentUserAvatarUrl={currentUserAvatarUrl}
+                  /> )
+                // ✨ 이 부분이 변경되었습니다! "리뷰 페이지 (구현 예정)" 텍스트 대신 ReviewPage 컴포넌트를 렌더링합니다.
                 : view === "review" && selectedRestaurantForReview ? (
-                  <ReviewPage // ⭐ 컴포넌트 이름 ReviewBoardPage -> ReviewPage
-                    restaurant={selectedRestaurantForReview} // Restaurant 객체 (id, name 필드 포함)
-                    onBack={handleBackFromReview} // ⭐ ReviewPage에서 뒤로가기 클릭 시 호출될 함수 전달
-                  />
-                )
+                    <ReviewPage
+                      restaurant={selectedRestaurantForReview} // StoreDetailPage에서 전달받은 restaurant 객체
+                      onBack={handleBackFromReview} // ReviewPage에서 StoreDetailPage로 돌아갈 함수
+                      // ReviewPage에서 사용자 정보가 필요하다면 아래 prop들도 전달합니다.
+                      currentUserId={currentUserId}
+                      currentUserNickname={currentUserNickname}
+                      currentUserAvatarUrl={currentUserAvatarUrl}
+                      isLoggedIn={isLoggedIn}
+                    />
+                  )
                 : view === "manageStore" ? ( <StoreManagementPage /> )
-                : view === "changeGrade" ? ( <ChangeGradePage /> )
-                // ⭐️ StoreDetailPage 렌더링 조건 및 prop 전달
+                : view === "changeGrade" ? ( <ChangeGradePage
+                      currentUserId={currentUserId}
+                    /> )
                 : view === "storeDetail" && selectedRestaurant ? (
-                  <StoreDetailPage // ⭐ 컴포넌트 이름 StoreDetail -> StoreDetailPage
-                    restaurantId={selectedRestaurant.id} // Restaurant 객체의 PK 필드명은 'id'이므로 selectedRestaurant.id로 넘김
-                    onBack={handleBackFromDetail}
-                    onViewReviews={handleViewRestaurantReviews} // ⭐ 콜백 함수 전달
-                  />
-                ) : (
-                  <>
-                    <MetroMap selected={selectedStation} onSelect={setSelectedStation} />
-                    {selectedStation && (
-                      <Box sx={{ mt: 3, width: "100%", maxWidth: "900px" }}>
-                        <StationInfo
-                          stationName={selectedStation.name}
-                          onRestaurantSelect={handleRestaurantSelect} // StationInfo에서 선택된 식당 (Restaurant 객체) 전달
-                          // Header의 selectedCategory를 StationInfo에 전달하여 필터링에 사용하려면
-                          // selectedCategoryFromHeader={selectedCategory} 와 같이 전달하고 StationInfo 내부 로직 수정 필요
-                        />
-                      </Box>
-                    )}
-                  </>
-                )}
+                    <StoreDetailPage
+                      restaurantId={selectedRestaurant.id}
+                      onBack={handleBackFromDetail}
+                      onViewReviews={handleViewRestaurantReviews}
+                      currentUserId={currentUserId}
+                      currentUserNickname={currentUserNickname}
+                      currentUserAvatarUrl={currentUserAvatarUrl}
+                    />
+                  ) : ( // view === "map" 이거나 기본 뷰일 때
+                    <>
+                      <Paper elevation={3} sx={{
+                        width: '90%',
+                        maxWidth: '1200px',
+                        height: '700px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        overflow: 'auto',
+                        mb: 4,
+                        borderRadius: 2,
+                      }}>
+                        <MetroMap selected={selectedStation} onSelect={handleMapStationSelect} />
+                      </Paper>
+
+                      <Modal
+                        open={openStationInfoModal}
+                        onClose={handleCloseStationInfoModal}
+                        aria-labelledby="station-info-modal-title"
+                        aria-describedby="station-info-modal-description"
+                        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Paper sx={{
+                          position: 'relative',
+                          width: { xs: '95%', sm: '80%', md: '600px' },
+                          maxHeight: '90vh',
+                          overflowY: 'auto',
+                          p: { xs: 2, sm: 3, md: 4 },
+                          borderRadius: 2,
+                          outline: 'none',
+                        }}>
+                          {selectedStation && (
+                            <StationInfo
+                              stationName={selectedStation.name}
+                              onRestaurantSelect={handleRestaurantSelect}
+                              onClose={handleCloseStationInfoModal}
+                            />
+                          )}
+                        </Paper>
+                      </Modal>
+                    </>
+                  )}
             </Box>
           </Box>
         </Box>
@@ -168,9 +304,6 @@ export default function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        {/* BrowserRouter는 App.jsx를 감싸는 index.js나 main.jsx에 있어야 합니다. */}
-        {/* 만약 App.jsx가 최상위라면 <BrowserRouter>로 <AppContent />를 감싸야 합니다. */}
-        {/* 현재 코드에는 BrowserRouter가 없으므로, 이미 외부에 있다고 가정합니다. */}
         <AppContent />
       </ThemeProvider>
     </ColorModeContext.Provider>

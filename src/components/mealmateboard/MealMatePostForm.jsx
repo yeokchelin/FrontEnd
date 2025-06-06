@@ -1,9 +1,13 @@
 // src/components/mealmateboard/MealMatePostForm.jsx
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, Typography, Paper, MenuItem, Box } from '@mui/material'; // Box 추가 (선택적 레이아웃용)
+import { TextField, Button, Typography, Paper, MenuItem, Box, CircularProgress } from '@mui/material'; // CircularProgress 추가 (로딩 인디케이터용)
 
-export default function MealMatePostForm({ onAddPost, initialFormData = null, isEditMode = false }) {
-  const [authorName, setAuthorName] = useState('');
+// currentUserId, currentUserNickname, isLoading props 추가
+export default function MealMatePostForm({ onAddPost, initialFormData = null, isEditMode = false, currentUserId, currentUserNickname, isLoading }) {
+  // kakaoUserId 상태 추가
+  const [kakaoUserId, setKakaoUserId] = useState(null);
+  const [writer, setWriter] = useState(''); // 백엔드의 'writer' 필드와 매칭
+
   const [postTitle, setPostTitle] = useState('');
   const [postContent, setPostContent] = useState('');
   const [meetingStation, setMeetingStation] = useState('');
@@ -12,50 +16,63 @@ export default function MealMatePostForm({ onAddPost, initialFormData = null, is
   const [genderPreference, setGenderPreference] = useState('무관');
   const [status, setStatus] = useState('모집 중');
 
-
+  // 컴포넌트 마운트 시 또는 props 변경 시 작성자 정보 자동 설정
   useEffect(() => {
+    // 수정 모드일 때
     if (isEditMode && initialFormData) {
-      setAuthorName(initialFormData.writer || ''); // 백엔드 필드명 writer 매칭
+      setWriter(initialFormData.writer || ''); // 기존 작성자 닉네임 로드
+      setKakaoUserId(initialFormData.kakaoUserId || null); // 기존 작성자 ID 로드
       setPostTitle(initialFormData.title || '');
       setPostContent(initialFormData.content || '');
       setMeetingStation(initialFormData.meetingStation || '');
       setMeetingTime(initialFormData.meetingTime || '');
-      setPartySize(initialFormData.recruitCount || 1); // 백엔드 필드명 recruitCount 매칭
+      setPartySize(initialFormData.recruitCount || 1);
       setGenderPreference(initialFormData.preferredGender || '무관');
       setStatus(initialFormData.status || '모집 중');
-    } else {
-      // 새 글 작성 모드 시, authorName은 현재 로그인 사용자 정보로 채우는 것이 좋음
-      // 여기서는 일단 비워두거나, 부모로부터 currentUserNickname 등을 받아와서 설정 가능
-      setAuthorName(''); // 예: props.currentUserNickname || ''
+    }
+    // 새 글 작성 모드일 때
+    else {
+      // 현재 로그인 사용자 정보로 필드를 자동 채움
+      setWriter(currentUserNickname || '');
+      setKakaoUserId(currentUserId || null); // Long 타입으로 전달될 것이므로 Number() 불필요
       setPostTitle('');
       setPostContent('');
       setMeetingStation('');
       setMeetingTime('');
       setPartySize(1);
       setGenderPreference('무관');
-      setStatus('모집 중');
+      setStatus('모집 중'); // 새 글 작성 시 초기 상태는 '모집 중'
     }
-  }, [initialFormData, isEditMode]); // 의존성 배열에 isEditMode도 포함
+  }, [initialFormData, isEditMode, currentUserId, currentUserNickname]); // 의존성 배열에 currentUserId, currentUserNickname 추가
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    if (!authorName.trim() || !postTitle.trim() || !postContent.trim() || !meetingStation.trim() || !meetingTime.trim() || !partySize || partySize <= 0) {
-      alert('작성자, 제목, 내용, 만날 역, 시간, 인원(1 이상)은 필수 입력 항목입니다.');
+
+    // ★★★ 필수 필드 유효성 검사 (kakaoUserId 추가) ★★★
+    if (!writer.trim() || !postTitle.trim() || !postContent.trim() ||
+        !meetingStation.trim() || !meetingTime.trim() || !partySize || partySize <= 0 ||
+        !kakaoUserId) { // kakaoUserId가 유효한지 확인
+      alert('작성자, 제목, 내용, 만날 역, 시간, 인원(1 이상) 및 사용자 정보는 필수 입력 항목입니다.');
       return;
     }
 
+    // 백엔드의 MatePostDto 구조에 맞춰 데이터 구성
     const formData = {
-      authorName,
-      postTitle,
-      postContent,
-      meetingStation,
-      meetingTime,
-      partySize: Number(partySize),
-      genderPreference,
-      status,
+      writer: writer, // 작성자 닉네임 (DB의 writer 필드)
+      title: postTitle,
+      content: postContent,
+      meetingStation: meetingStation,
+      meetingTime: meetingTime,
+      recruitCount: Number(partySize), // 백엔드 필드명 recruitCount
+      preferredGender: genderPreference,
+      status: status,
+      kakaoUserId: kakaoUserId, // ★★★ kakaoUserId 포함 (DB의 kakao_user_id 필드) ★★★
+      // writerAvatarUrl: (부모로부터 받아서 전달하거나, 나중에 처리)
     };
+
+    // 수정 모드일 경우 postId 포함
     if (isEditMode && initialFormData && initialFormData.id) {
-        formData.id = initialFormData.id;
+      formData.id = initialFormData.id;
     }
 
     onAddPost(formData); // 부모의 handleSavePost 호출
@@ -67,47 +84,55 @@ export default function MealMatePostForm({ onAddPost, initialFormData = null, is
     { value: '여성', label: '여성만 (게스트 기준)' },
   ];
 
-  const statusOptions = [
+  const statusOptions = [ // 상태 변경은 별도 PATCH API로 처리하는 것이 일반적이지만, 폼에서도 가능
     { value: '모집 중', label: '모집 중' },
     { value: '모집 완료', label: '모집 완료' },
   ];
-
 
   return (
     <Paper
       component="form"
       onSubmit={handleSubmit}
       elevation={3}
-      sx={{ // ❗️ 여기에 실제 스타일 객체 적용
-        p: { xs: 2, sm: 3, md: 4 },        // 내부 패딩
-        my: { xs: 2, sm: 3 },            // 폼 자체의 상하 마진
-        width: '100%',                   // 부모 컨테이너 너비에 맞춤
-        maxWidth: '700px',               // 폼의 최대 너비
-        mx: 'auto',                      // 폼을 감싸는 부모가 중앙 정렬을 이미 하고 있다면 생략 가능
-        bgcolor: 'background.paper',     // 테마의 paper 배경색
-        borderRadius: 2,                 // 테마 기반 모서리 둥글기
+      sx={{
+        p: { xs: 2, sm: 3, md: 4 },
+        my: { xs: 2, sm: 3 },
+        width: '100%',
+        maxWidth: '700px',
+        mx: 'auto',
+        bgcolor: 'background.paper',
+        borderRadius: 2,
         display: 'flex',
         flexDirection: 'column',
-        gap: 2.5,                        // 각 폼 요소들 사이의 간격
+        gap: 2.5,
       }}
     >
       <Typography variant="h5" component="h2" align="center" gutterBottom sx={{ mb: 2 }}>
         {isEditMode ? "밥친구 게시글 수정" : "밥친구 구하기 글쓰기"}
       </Typography>
 
-      {/* 작성자는 수정 모드에서는 보통 변경하지 않거나, 현재 로그인 사용자로 고정 */}
+      {/* 작성자 닉네임 필드 - currentNickname으로 자동 채우고 readOnly/disabled */}
       <TextField
         label="작성자 닉네임"
-        value={authorName}
-        onChange={(e) => setAuthorName(e.target.value)}
+        value={writer}
         required
         fullWidth
         variant="outlined"
-        // ❗️ isEditMode일 때 disabled로 설정하거나,
-        //    새 글 작성 시에는 현재 로그인 사용자 닉네임을 받아와서 readOnly 또는 disabled로 설정 권장
-        disabled={isEditMode} // 예시: 수정 시 작성자 변경 불가
-        helperText={isEditMode ? "작성자는 변경할 수 없습니다." : "표시될 닉네임입니다."}
+        InputProps={{
+          readOnly: true, // 사용자가 직접 수정 불가
+        }}
+        helperText="작성자 닉네임은 로그인 정보로 자동 입력됩니다."
       />
+
+      {/* kakaoUserId는 숨김 필드로 전송 */}
+      {/* type="hidden"은 Material-UI TextField에서는 직접 지원하지 않으므로,
+          Box나 input 태그를 사용하거나, 단순히 상태에만 유지하고 UI에 표시하지 않는 방식으로 처리합니다. */}
+      {/* 개발자 도구에서 Network 탭을 통해 전송되는 formData에 kakaoUserId가 포함되는지 확인합니다. */}
+      {/* <input type="hidden" name="kakaoUserId" value={kakaoUserId} /> */}
+      {/* 또는 TextField 자체를 숨김 */}
+      {/* <TextField type="hidden" value={kakaoUserId} name="kakaoUserId" /> */}
+
+
       <TextField label="제목" value={postTitle} onChange={(e) => setPostTitle(e.target.value)} required fullWidth variant="outlined" />
       <TextField label="내용" value={postContent} onChange={(e) => setPostContent(e.target.value)} required fullWidth multiline rows={5} variant="outlined" placeholder="모임에 대한 자세한 내용을 적어주세요."/>
       <TextField label="만날 역" value={meetingStation} onChange={(e) => setMeetingStation(e.target.value)} required fullWidth variant="outlined" placeholder="예: 강남역 11번 출구"/>
@@ -116,12 +141,12 @@ export default function MealMatePostForm({ onAddPost, initialFormData = null, is
         label="구하는 인원 (본인 제외)"
         type="number"
         value={partySize}
-        onChange={(e) => setPartySize(e.target.value < 1 && e.target.value !== '' ? 1 : e.target.value)} // 1 미만 입력 방지 (부분적)
+        onChange={(e) => setPartySize(e.target.value < 1 && e.target.value !== '' ? 1 : e.target.value)}
         required
         fullWidth
         variant="outlined"
         InputLabelProps={{ shrink: true }}
-        inputProps={{ min: 1 }} // HTML5 기본 유효성 검사
+        inputProps={{ min: 1 }}
       />
       <TextField
         select
@@ -134,12 +159,6 @@ export default function MealMatePostForm({ onAddPost, initialFormData = null, is
         {genderOptions.map((option) => ( <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem> ))}
       </TextField>
 
-      {/*
-        수정 모드일 때만 상태(status) 필드를 보여줄 수 있습니다.
-        하지만 "모집 완료" 버튼이 별도로 있으므로, 이 폼에서 직접 상태를 변경하는 것은 UX상 혼란을 줄 수 있습니다.
-        만약 관리자 기능 등으로 상태를 직접 변경해야 한다면 이 필드를 활성화할 수 있습니다.
-        현재는 주석 처리하거나, 읽기 전용으로 표시하는 것을 고려합니다.
-      */}
       {isEditMode && (
         <TextField
           label="모집 상태 (참고용)"
@@ -148,13 +167,12 @@ export default function MealMatePostForm({ onAddPost, initialFormData = null, is
           variant="outlined"
           disabled // 읽기 전용으로 표시
           sx={{mt:1}}
-          // helperText="모집 상태는 '모집 완료' 버튼으로 변경해주세요."
         />
       )}
 
-      <Button type="submit" variant="contained" color="primary" size="large" sx={{ mt: 2, py: 1.2 }}>
-        {isEditMode ? "수정 완료" : "게시글 작성"}
+      <Button type="submit" variant="contained" color="primary" size="large" sx={{ mt: 2, py: 1.2 }} disabled={isLoading}>
+        {isLoading ? <CircularProgress size={24} /> : (isEditMode ? "수정 완료" : "게시글 작성")}
       </Button>
     </Paper>
   );
-};
+}

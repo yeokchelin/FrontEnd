@@ -1,8 +1,10 @@
-// src/pages/ChangeGradePage.jsx
-import React, { useEffect, useState } from "react";
+// src/pages/grade/ChangeGradePage.jsx
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box, Typography, Paper, List, ListItem, ListItemText,
-  Button, Divider, TextField, Alert, IconButton, Collapse
+  Button, Divider, TextField, Alert, IconButton, Collapse,
+  MenuItem // Select 사용을 위해 MenuItem 임포트
+  // Modal 임포트 제거됨
 } from "@mui/material";
 import AddBusinessIcon from '@mui/icons-material/AddBusiness';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -10,23 +12,80 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+// import MetroMap from "../../components/main/MetroMap"; // ★★★ MetroMap 임포트 제거 ★★★
+// import CloseIcon from '@mui/icons-material/Close'; // ★★★ CloseIcon 임포트 제거 ★★★
+
+// ★★★ 2호선 역 데이터 임포트 ★★★
+import { mainLineStations, seongsuBranch, sinjeongBranch } from "../../data/stationLine2";
+
+// 카테고리 옵션
+const CATEGORY_OPTIONS = [
+  { value: '한식', label: '한식' },
+  { value: '양식', label: '양식' },
+  { value: '중식', label: '중식' },
+  { value: '일식', label: '일식' },
+  { value: '카페/디저트', label: '카페/디저트' },
+  { value: '기타', label: '기타' },
+];
+
+// ★★★ 모든 2호선 역 이름 목록 생성 (컴포넌트 외부에 정의) ★★★
+const ALL_LINE2_STATIONS = [
+  ...mainLineStations,
+  ...seongsuBranch.slice(1),
+  ...sinjeongBranch.slice(1)
+].map(station => station.name);
+
+// 중복 제거 및 정렬
+const UNIQUE_SORTED_LINE2_STATIONS = [...new Set(ALL_LINE2_STATIONS)].sort();
+
 
 export default function ChangeGradePage() {
   const [stores, setStores] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState("");
   const [kakaoId, setKakaoId] = useState("");
+
   const [storeInfo, setStoreInfo] = useState({
-    name: "", address: "", hours: "", contact: "",
-    description: "", registrationNumber: ""
+    name: "",
+    address: "",
+    hours: "",
+    contact: "",
+    description: "",
+    registrationNumber: "",
+    category: "한식",
+    imageUrl: "",
+    meetingStation: "", // 만날 역 필드
   });
+
+  // ★★★ MetroMap 모달 관련 상태 제거 ★★★
+  // const [openMetroMapModal, setOpenMetroMapModal] = useState(false);
+  // const [selectedStationInMap, setSelectedStationInMap] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("jwt");
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        setKakaoId(decoded.sub); // sub에 email이나 id 저장됨
+        const userId = decoded.sub;
+        setKakaoId(userId);
+
+        const savedLocalStoresData = localStorage.getItem('userRegisteredStores');
+        if (savedLocalStoresData) {
+          try {
+            const parsedStores = JSON.parse(savedLocalStoresData);
+            if (Array.isArray(parsedStores)) {
+              setStores(parsedStores.map(store => ({
+                ...store,
+                category: store.category || "한식",
+                imageUrl: store.imageUrl || "",
+                meetingStation: store.meetingStation || "",
+              })));
+            }
+          } catch (e) {
+            console.error("로컬 스토리지 'userRegisteredStores' 파싱 실패", e);
+            localStorage.removeItem('userRegisteredStores');
+          }
+        }
       } catch (e) {
         console.error("JWT decode 실패", e);
       }
@@ -36,35 +95,48 @@ export default function ChangeGradePage() {
   useEffect(() => {
     if (kakaoId) {
       axios.get(`/api/store/user/${kakaoId}`)
-        .then(res => setStores(res.data))
+        .then(res => {
+          const fetchedStores = res.data;
+          setStores(fetchedStores.map(store => ({
+            ...store,
+            category: store.category || "한식",
+            imageUrl: store.imageUrl || "",
+            meetingStation: store.meetingStation || "",
+          })));
+          localStorage.setItem('userRegisteredStores', JSON.stringify(fetchedStores));
+        })
         .catch(err => console.error("가게 불러오기 실패", err));
     }
   }, [kakaoId]);
+
 
   const userLevel = stores.length > 0 ? "점주" : "일반";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setStoreInfo(prev => ({ ...prev, [name]: value }));
-    if (error && ["name", "address", "registrationNumber"].includes(name)) {
-      if (storeInfo.name && storeInfo.address && storeInfo.registrationNumber) {
+    if (error && ["name", "address", "registrationNumber", "category", "meetingStation"].includes(name)) {
+      if (storeInfo.name && storeInfo.address && storeInfo.registrationNumber && storeInfo.category && storeInfo.meetingStation) {
         setError("");
       }
     }
   };
 
+  // ★★★ MetroMap 관련 핸들러 제거 (handleStationSelect, handleOpenMetroMapModal, handleCloseMetroMapModal) ★★★
+  // 역 선택은 이제 드롭다운의 onChange (handleChange)를 통해 직접 처리됩니다.
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { name, address, registrationNumber } = storeInfo;
-    if (!name || !address || !registrationNumber) {
-      setError("상호명, 주소, 사업자 등록 번호는 필수 입력 항목입니다!");
+    const { name, address, registrationNumber, category, meetingStation } = storeInfo;
+    if (!name || !address || !registrationNumber || !category || !meetingStation) {
+      setError("상호명, 주소, 사업자 등록 번호, 카테고리, 만날 역은 필수 입력 항목입니다!");
       return;
     }
 
     console.log("📦 백엔드로 보낼 데이터:", {
-    ...storeInfo,
-    kakaoId,
-  });
+      ...storeInfo,
+      kakaoId,
+    });
 
     try {
       const response = await axios.post("/api/store", {
@@ -72,21 +144,37 @@ export default function ChangeGradePage() {
         kakaoId
       });
 
-      setStores(prev => [...prev, response.data]);
+      const newRegisteredStore = response.data;
+
+      let currentRegisteredStores = JSON.parse(localStorage.getItem('userRegisteredStores')) || [];
+      if (!Array.isArray(currentRegisteredStores)) {
+        currentRegisteredStores = [];
+      }
+      currentRegisteredStores.push(newRegisteredStore);
+
+      localStorage.setItem('userRegisteredStores', JSON.stringify(currentRegisteredStores));
+
+      setStores(prev => [...prev, newRegisteredStore]);
       setStoreInfo({
         name: "", address: "", hours: "", contact: "",
-        description: "", registrationNumber: ""
+        description: "", registrationNumber: "",
+        category: "한식",
+        imageUrl: "",
+        meetingStation: "",
       });
       setShowForm(false);
+      setError("");
 
-      await axios.post(`/api/users/${kakaoId}/grade`, null, {
+      await axios.post(`/api/users/${Number(kakaoId)}/grade`, null, {
         params: { grade: "OWNER" },
       });
 
       alert(userLevel === "일반" ? "점주 회원으로 전환되었습니다!" : "가게가 추가되었습니다!");
+
     } catch (e) {
-      console.error("가게 등록 또는 등급 변경 실패", e);
-      alert("등록 중 오류 발생");
+      console.error("가게 등록 또는 등급 변경 실패", e.response?.data || e.message || e);
+      setError(e.response?.data?.message || e.message || "가게 등록 중 오류 발생");
+      alert("등록 중 오류 발생: " + (e.response?.data?.message || e.message || "알 수 없는 오류"));
     }
   };
 
@@ -95,15 +183,24 @@ export default function ChangeGradePage() {
 
     try {
       await axios.delete(`/api/store/${id}`);
-      const updated = stores.filter((store) => store.storeId !== id);
-      setStores(updated);
-      if (updated.length === 0) {
+
+      const updatedStores = stores.filter((store) => store.id !== id);
+      setStores(updatedStores);
+
+      localStorage.setItem('userRegisteredStores', JSON.stringify(updatedStores));
+
+      if (updatedStores.length === 0) {
         alert("모든 가게가 삭제되어 일반 회원으로 전환됩니다.");
         setShowForm(true);
+        await axios.post(`/api/users/${Number(kakaoId)}/grade`, null, {
+          params: { grade: "NORMAL" },
+        }).catch(err => console.error("등급 변경 실패:", err));
+      } else {
+        alert("가게가 성공적으로 삭제되었습니다.");
       }
     } catch (e) {
-      console.error("가게 삭제 실패", e);
-      alert("가게 삭제 중 오류 발생");
+      console.error("가게 삭제 실패", e.response?.data || e.message || e);
+      alert("가게 삭제 중 오류 발생: " + (e.response?.data?.message || e.message || "알 수 없는 오류"));
     }
   };
 
@@ -135,7 +232,10 @@ export default function ChangeGradePage() {
           if (!showForm) {
             setStoreInfo({
               name: "", address: "", hours: "", contact: "",
-              description: "", registrationNumber: ""
+              description: "", registrationNumber: "",
+              category: "한식",
+              imageUrl: "",
+              meetingStation: "",
             });
           }
         }}
@@ -152,10 +252,48 @@ export default function ChangeGradePage() {
           <Typography variant="h6" textAlign="center">가게 정보 입력</Typography>
           <TextField name="name" label="상호명" value={storeInfo.name} onChange={handleChange} required fullWidth />
           <TextField name="address" label="주소" value={storeInfo.address} onChange={handleChange} required fullWidth />
+          <TextField
+            name="category"
+            label="카테고리"
+            value={storeInfo.category}
+            onChange={handleChange}
+            required
+            fullWidth
+            select
+          >
+            {CATEGORY_OPTIONS.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
           <TextField name="registrationNumber" label="사업자 등록 번호" value={storeInfo.registrationNumber} onChange={handleChange} required fullWidth />
           <TextField name="hours" label="영업시간 (선택)" value={storeInfo.hours} onChange={handleChange} fullWidth />
           <TextField name="contact" label="연락처 (선택)" value={storeInfo.contact} onChange={handleChange} fullWidth />
+          <TextField name="imageUrl" label="가게 대표 이미지 URL (선택)" value={storeInfo.imageUrl} onChange={handleChange} fullWidth />
           <TextField name="description" label="가게 소개 (선택)" value={storeInfo.description} onChange={handleChange} multiline rows={3} fullWidth />
+          
+          {/* ★★★ 만날 역 TextField (Select 드롭다운만 사용) ★★★ */}
+          <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, color: 'text.secondary', fontWeight: 'medium' }}>
+            만날 역 선택 (2호선)
+          </Typography>
+          <TextField
+            name="meetingStation"
+            label="목록에서 선택"
+            value={storeInfo.meetingStation}
+            onChange={handleChange}
+            required
+            fullWidth
+            select
+          >
+            <MenuItem value="">-- 역 선택 --</MenuItem>
+            {UNIQUE_SORTED_LINE2_STATIONS.map((stationName) => (
+              <MenuItem key={stationName} value={stationName}>
+                {stationName}
+              </MenuItem>
+            ))}
+          </TextField>
+
           {error && <Alert severity="error" onClose={() => setError("")}>{error}</Alert>}
           <Button type="submit" variant="contained" color="primary">등록하기</Button>
         </Paper>
@@ -169,25 +307,46 @@ export default function ChangeGradePage() {
           </Box>
           <List>
             {stores.map((store, idx) => (
-              <React.Fragment key={store.storeId}>
+              <React.Fragment key={store.id || `store-${idx}`}>
                 <ListItem
                   secondaryAction={
-                    <IconButton onClick={() => handleDeleteStore(store.storeId)}>
+                    <IconButton onClick={() => handleDeleteStore(store.id)}>
                       <DeleteIcon color="error" />
                     </IconButton>
                   }
                 >
                   <ListItemText
-                    primary={<Typography variant="subtitle1" fontWeight="medium">{store.name}</Typography>}
+                    primary={<Typography variant="subtitle1" fontWeight="medium" component="span">{store.name}</Typography>}
                     secondary={
-                      <>
-                        <Typography variant="body2" color="text.secondary">주소: {store.address}</Typography><br />
+                      <React.Fragment>
+                        <Typography variant="body2" color="text.secondary" component="span">주소: {store.address}</Typography>
+                        <br />
+                        <Typography variant="body2" color="text.secondary" component="span">카테고리: {store.category || 'N/A'}</Typography>
                         {store.registrationNumber && (
-                          <Typography variant="caption" color="text.disabled">
-                            사업자번호: {store.registrationNumber}
-                          </Typography>
+                          <React.Fragment>
+                            <br />
+                            <Typography variant="caption" color="text.disabled" component="span">
+                              사업자번호: {store.registrationNumber}
+                            </Typography>
+                          </React.Fragment>
                         )}
-                      </>
+                        {store.imageUrl && (
+                          <React.Fragment>
+                            <br />
+                            <Typography variant="caption" color="text.disabled" component="span">
+                              이미지 URL: {store.imageUrl}
+                            </Typography>
+                          </React.Fragment>
+                        )}
+                        {store.meetingStation && ( // meetingStation 표시
+                          <React.Fragment>
+                            <br />
+                            <Typography variant="caption" color="text.disabled" component="span">
+                              만날 역: {store.meetingStation}
+                            </Typography>
+                          </React.Fragment>
+                        )}
+                      </React.Fragment>
                     }
                   />
                 </ListItem>
@@ -197,6 +356,8 @@ export default function ChangeGradePage() {
           </List>
         </Paper>
       )}
+
+      {/* ★★★ MetroMap 모달 관련 코드 완전히 제거됨 ★★★ */}
     </Box>
   );
 }

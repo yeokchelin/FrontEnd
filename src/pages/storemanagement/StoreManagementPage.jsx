@@ -1,12 +1,14 @@
 // src/pages/storemanagement/StoreManagementPage.jsx
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Tabs, Tab } from '@mui/material';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Typography, Paper, Tabs, Tab, CircularProgress, Alert } from '@mui/material';
 import StoreInfoForm from '../../components/storemanagement/StoreInfoForm';
 import StorePreview from '../../components/storemanagement/StorePreview';
 import ReviewManagementSection from '../../components/storemanagement/ReviewManagementSection';
 import MenuManagementPage from './MenuManagementPage';
+import axios from 'axios';
 
-// 탭 패널을 위한 헬퍼 컴포넌트 (파일 상단에 한 번만 정의)
+const API_BASE_URL = '/api';
+
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
   return (
@@ -26,7 +28,6 @@ function TabPanel(props) {
   );
 }
 
-// 탭 접근성(ARIA) 속성을 위한 헬퍼 함수 (파일 상단에 한 번만 정의)
 function a11yProps(index) {
   return {
     id: `store-management-tab-${index}`,
@@ -35,7 +36,8 @@ function a11yProps(index) {
 }
 
 const StoreManagementPage = () => {
-  // ... (컴포넌트의 나머지 로직은 이전 답변과 동일합니다) ...
+  const [currentTab, setCurrentTab] = useState(0);
+
   const [currentStoreId, setCurrentStoreId] = useState(null);
   const [storeName, setStoreName] = useState('');
   const [address, setAddress] = useState('');
@@ -43,93 +45,110 @@ const StoreManagementPage = () => {
   const [contactNumber, setContactNumber] = useState('');
   const [storeDescription, setStoreDescription] = useState('');
   const [registrationNumber, setRegistrationNumber] = useState('');
+  const [category, setCategory] = useState('한식');
+  const [imageUrl, setImageUrl] = useState('');
+
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let storeToManage = null;
-    let localStoreId = null;
-    let localStoreName = '';
-    let localAddress = '';
-    let localBusinessHours = '';
-    let localContactNumber = '';
-    let localStoreDescription = '';
-    let localRegistrationNumber = '';
-
     try {
       const savedStoresData = localStorage.getItem('userRegisteredStores');
+      console.log("[StoreManagementPage Debug] 로컬 스토리지 'userRegisteredStores' 값:", savedStoresData);
+
       if (savedStoresData) {
         const registeredStores = JSON.parse(savedStoresData);
-        if (registeredStores && registeredStores.length > 0) {
+        console.log("[StoreManagementPage Debug] 파싱된 registeredStores:", registeredStores);
+
+        if (registeredStores && Array.isArray(registeredStores) && registeredStores.length > 0) {
           storeToManage = registeredStores[0];
-          localStoreId = storeToManage.id;
-          localStoreName = storeToManage.name || '';
-          localAddress = storeToManage.address || '';
-          localBusinessHours = storeToManage.hours || '';
-          localContactNumber = storeToManage.contact || '';
-          localStoreDescription = storeToManage.description || '';
-          localRegistrationNumber = storeToManage.registrationNumber || '';
+          console.log("[StoreManagementPage Debug] 로드된 storeToManage:", storeToManage);
+
+          setCurrentStoreId(storeToManage.storeId);
+          setStoreName(storeToManage.name || '');
+          setAddress(storeToManage.address || '');
+          setBusinessHours(storeToManage.hours || '');
+          setContactNumber(storeToManage.contact || '');
+          setStoreDescription(storeToManage.description || '');
+          setRegistrationNumber(storeToManage.registrationNumber || '');
+          setCategory(storeToManage.category || '한식');
+          setImageUrl(storeToManage.imageUrl || '');
+        } else {
+            console.log("[StoreManagementPage Debug] 'userRegisteredStores'는 있지만, 배열이 아니거나 비어있습니다.");
         }
+      } else {
+          console.log("[StoreManagementPage Debug] 'userRegisteredStores' 로컬 스토리지에 값이 없습니다.");
       }
     } catch (e) {
       console.error("StoreManagementPage: 로컬 스토리지에서 가게 정보를 불러오는데 실패했습니다.", e);
+    } finally {
+      setIsInitialLoadComplete(true);
+      console.log("[StoreManagementPage Debug] 초기 로드 완료. currentStoreId (after load):", storeToManage?.storeId, "isInitialLoadComplete:", true);
     }
-
-    setCurrentStoreId(localStoreId);
-    setStoreName(localStoreName);
-    setAddress(localAddress);
-    setBusinessHours(localBusinessHours);
-    setContactNumber(localContactNumber);
-    setStoreDescription(localStoreDescription);
-    setRegistrationNumber(localRegistrationNumber);
-    setIsInitialLoadComplete(true);
   }, []);
 
-  const storeDataForForm = { currentStoreId, storeName, address, businessHours, contactNumber, storeDescription, registrationNumber };
+  const storeDataForForm = {
+    currentStoreId, storeName, address, businessHours, contactNumber, storeDescription,
+    registrationNumber, category, imageUrl
+  };
+
   const storeSetters = {
-    setStoreName, setAddress, setBusinessHours, setContactNumber, setStoreDescription, setRegistrationNumber,
-    handleSubmit: (formDataFromChild) => {
+    setStoreName,
+    setAddress,
+    setBusinessHours,
+    setContactNumber,
+    setStoreDescription,
+    setRegistrationNumber,
+    setCategory,
+    setImageUrl, // ★★★ 이 위치에 쉼표가 누락되었을 가능성이 높습니다. ★★★
+    handleSubmit: useCallback(async (formDataFromChild) => {
       if (!currentStoreId) {
         alert('수정할 가게가 선택되지 않았거나 가게 정보가 없습니다.');
         return;
       }
+      setLoading(true);
+      setError(null);
+
       try {
-        const savedStoresData = localStorage.getItem('userRegisteredStores');
-        let registeredStores = savedStoresData ? JSON.parse(savedStoresData) : [];
-        const storeIndex = registeredStores.findIndex(store => store.id === currentStoreId);
+        const updatePayload = {
+          name: formDataFromChild.storeName,
+          address: formDataFromChild.address,
+          hours: formDataFromChild.businessHours,
+          contact: formDataFromChild.contactNumber,
+          description: formDataFromChild.storeDescription,
+          registrationNumber: formDataFromChild.registrationNumber,
+          category: formDataFromChild.category,
+          imageUrl: formDataFromChild.imageUrl,
+        };
+
+        await axios.put(`${API_BASE_URL}/store/${currentStoreId}`, updatePayload);
+        
+        let savedStoresData = JSON.parse(localStorage.getItem('userRegisteredStores')) || [];
+        const storeIndex = savedStoresData.findIndex(store => store.storeId === currentStoreId);
 
         if (storeIndex !== -1) {
-          const updatedStore = {
-            ...registeredStores[storeIndex],
-            name: formDataFromChild.storeName,
-            address: formDataFromChild.address,
-            hours: formDataFromChild.businessHours,
-            contact: formDataFromChild.contactNumber,
-            description: formDataFromChild.storeDescription,
-            registrationNumber: registrationNumber, // 부모의 registrationNumber 상태 사용
-          };
-          registeredStores[storeIndex] = updatedStore;
-          localStorage.setItem('userRegisteredStores', JSON.stringify(registeredStores));
-
-          setStoreName(updatedStore.name);
-          setAddress(updatedStore.address);
-          setBusinessHours(updatedStore.hours);
-          setContactNumber(updatedStore.contact);
-          setStoreDescription(updatedStore.description);
-          
-          alert('가게 정보가 성공적으로 업데이트되었습니다!');
-        } else {
-          alert('수정할 가게 정보를 찾을 수 없습니다. 목록을 새로고침하거나 다시 시도해주세요.');
+          savedStoresData[storeIndex] = { ...savedStoresData[storeIndex], ...updatePayload };
+          localStorage.setItem('userRegisteredStores', JSON.stringify(savedStoresData));
         }
-      } catch (e) {
-        console.error("StoreManagementPage: 가게 정보 업데이트 중 오류 발생", e);
-        alert('가게 정보 업데이트 중 오류가 발생했습니다.');
-      }
-    }
-  };
 
-  const [currentTab, setCurrentTab] = useState(0);
+        alert('가게 정보가 성공적으로 업데이트되었습니다!');
+      } catch (e) {
+        console.error("StoreManagementPage: 가게 정보 업데이트 중 오류 발생", e.response?.data || e.message || e);
+        const errorMessage = e.response?.data?.message || e.message || "가게 정보 업데이트 중 오류 발생";
+        setError(errorMessage);
+        alert('가게 정보 업데이트 중 오류가 발생했습니다: ' + errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    }, [currentStoreId]), // 이 쉼표는 이 속성이 마지막이 아니면 필요합니다. 여기서는 마지막 속성이므로 필요 없습니다.
+  }; // ★★★ 이 위치 (150:24)에 오류가 났으므로, 위에 쉼표가 누락되었을 가능성이 높습니다. ★★★
+
+
+  const noStoreRegistered = !currentStoreId && isInitialLoadComplete;
+
   const handleTabChange = (event, newValue) => { setCurrentTab(newValue); };
-  const noStoreRegistered = !currentStoreId;
 
   if (!isInitialLoadComplete) {
     return <Box sx={{p:3, textAlign:'center'}}><Typography>가게 정보 로딩 중...</Typography></Box>;
@@ -162,7 +181,11 @@ const StoreManagementPage = () => {
           <TabPanel value={currentTab} index={0}>
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: { xs: 3, lg: 4 }, alignItems: 'flex-start', width: '100%', maxWidth: 'xl', mx: 'auto' }}>
               <Box component="section" sx={{ flex: { lg: 1.75 }, width: '100%', order: { xs: 2, lg: 1 } }}>
-                <StoreInfoForm initialData={storeDataForForm} onUpdate={storeSetters} isNewStore={false} />
+                <StoreInfoForm
+                    initialData={storeDataForForm}
+                    onUpdate={storeSetters}
+                    isNewStore={false}
+                />
               </Box>
               <Box component="aside" sx={{ flex: { lg: 1 }, width: '100%', order: { xs: 1, lg: 2 }, position: { lg: 'sticky' }, top: { lg: (theme) => theme.spacing(10) } , maxHeight: {lg: 'calc(100vh - 120px)'}, overflowY: {lg: 'auto'} }}>
                 <Typography variant="h6" component="h2" sx={{ mb: 2, textAlign: { xs: 'center', lg: 'left' }, color: 'text.secondary' }}> 가게 페이지 미리보기 </Typography>
@@ -183,6 +206,3 @@ const StoreManagementPage = () => {
 };
 
 export default StoreManagementPage;
-
-// ❗️❗️❗️ 파일 하단에 있던 TabPanel 및 a11yProps 중복 정의를 여기서 삭제했습니다. ❗️❗️❗️
-// helper 함수들은 파일 상단에 한 번만 정의되어야 합니다.
