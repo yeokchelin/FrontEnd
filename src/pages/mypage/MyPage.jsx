@@ -11,6 +11,8 @@ import StorefrontIcon from '@mui/icons-material/Storefront';
 import ArticleIcon from '@mui/icons-material/Article';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 
+import MyActivityModal from "../../components/mypage/MyActivityModal"; // 경로 맞게 수정
+
 const SectionPaper = ({ title, icon, children }) => (
   <Paper
     elevation={2}
@@ -41,6 +43,10 @@ export default function Mypage({ setView }) {
   const [userLevel, setUserLevel] = useState("일반 회원");
   const [hasStores, setHasStores] = useState(false);
 
+  // 모달 관련 상태
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+
   useEffect(() => {
     const id = localStorage.getItem("currentUserId");
     setUserId(id);
@@ -68,28 +74,29 @@ export default function Mypage({ setView }) {
 
   useEffect(() => {
     if (!userId) return;
-    axios.get(`/api/review/user/${userId}`)
-      .then(res => setMyReviews(res.data))
+    axios.get(`/api/reviews/user/${userId}`)
+      .then(res => setMyReviews(res.data || []))
       .catch(() => setMyReviews([]));
     axios.get(`/api/boardmatefood/user/${userId}`)
-      .then(res => setMyMatePosts(res.data))
+      .then(res => {
+        console.log('밥친구 데이터:', res.data);
+        setMyMatePosts(res.data || [])
+      })
       .catch(() => setMyMatePosts([]));
     axios.get(`/api/freeboard/user/${userId}`)
-      .then(res => setMyFreePosts(res.data))
+      .then(res => {
+          console.log('자유게시판 데이터:', res.data);
+         setMyFreePosts(res.data || [])
+        })
       .catch(() => setMyFreePosts([]));
   }, [userId]);
 
   const handleManageStore = () => setView("manageStore");
 
-  // 클릭 시 해당 게시글 상세페이지로 이동
-  const handleGoToDetail = (type, id) => {
-    if (type === '리뷰') {
-      navigate(`/review/${id}`);
-    } else if (type === '밥친구') {
-      navigate(`/boardmatefood/${id}`);
-    } else if (type === '자유게시판') {
-      navigate(`/freeboard/${id}`);
-    }
+  // 🔥 활동 내역 클릭 시 모달 띄우기
+  const handleGoToDetail = (type, data) => {
+    setSelectedItem({ type, data });
+    setModalOpen(true);
   };
 
   const getPreviewText = (text) => {
@@ -97,27 +104,31 @@ export default function Mypage({ setView }) {
     return text.length > 20 ? text.substring(0, 20) + "..." : text;
   };
 
+  // 🔥 반드시 data: r/p/f로 원본데이터를 넣어준다!
   const myActivities = [
     ...myReviews.map(r => ({
       id: r.id,
       type: '리뷰',
       icon: <RateReviewIcon />,
       title: r.place || r.restaurantName || "리뷰",
-      content: getPreviewText(r.content)
+      content: getPreviewText(r.content),
+      data: r,
     })),
     ...myMatePosts.map(p => ({
       id: p.id,
       type: '밥친구',
       icon: <RestaurantIcon />,
       title: p.title,
-      content: getPreviewText(p.content)
+      content: getPreviewText(p.content),
+      data: p,
     })),
     ...myFreePosts.map(f => ({
       id: f.id,
       type: '자유게시판',
       icon: <ArticleIcon />,
       title: f.title,
-      content: getPreviewText(f.content)
+      content: getPreviewText(f.content),
+      data: f,
     }))
   ];
 
@@ -153,7 +164,7 @@ export default function Mypage({ setView }) {
                     <ListItem
                       button
                       sx={{ px: 0, flexDirection: 'column', alignItems: 'flex-start', cursor: "pointer" }}
-                      onClick={() => handleGoToDetail(act.type, act.id)}
+                      onClick={() => handleGoToDetail(act.type, act.data)}
                     >
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         <ListItemIcon sx={{ minWidth: 30 }}>{act.icon}</ListItemIcon>
@@ -217,6 +228,13 @@ export default function Mypage({ setView }) {
           </Button>
         )}
       </Box>
+
+      {/* 팝업 상세 모달 */}
+      <MyActivityModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        item={selectedItem}
+      />
     </Box>
   );
 }
