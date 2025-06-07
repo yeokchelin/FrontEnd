@@ -1,3 +1,5 @@
+// src/components/mypage/Mypage.jsx
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +14,7 @@ import ArticleIcon from '@mui/icons-material/Article';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 
 import MyActivityModal from "../../components/mypage/MyActivityModal"; // 경로 맞게 수정
+import FavoriteStoresSection from "../../components/mypage/FavoriteStoresSection"; // 경로 맞게 수정
 
 const SectionPaper = ({ title, icon, children }) => (
   <Paper
@@ -39,7 +42,6 @@ export default function Mypage({ setView }) {
   const [myReviews, setMyReviews] = useState([]);
   const [myMatePosts, setMyMatePosts] = useState([]);
   const [myFreePosts, setMyFreePosts] = useState([]);
-  const [favorites, setFavorites] = useState([]);
   const [userLevel, setUserLevel] = useState("일반 회원");
   const [hasStores, setHasStores] = useState(false);
 
@@ -65,11 +67,6 @@ export default function Mypage({ setView }) {
     } catch (e) {}
     setUserLevel(currentLevel);
     setHasStores(storesExist);
-
-    const fav = localStorage.getItem('userFavorites');
-    if (fav) {
-      setFavorites(JSON.parse(fav));
-    }
   }, []);
 
   useEffect(() => {
@@ -78,20 +75,14 @@ export default function Mypage({ setView }) {
       .then(res => setMyReviews(res.data || []))
       .catch(() => setMyReviews([]));
     axios.get(`/api/boardmatefood/user/${userId}`)
-      .then(res => {
-        console.log('밥친구 데이터:', res.data);
-        setMyMatePosts(res.data || [])
-      })
+      .then(res => setMyMatePosts(res.data || []))
       .catch(() => setMyMatePosts([]));
     axios.get(`/api/freeboard/user/${userId}`)
-      .then(res => {
-          console.log('자유게시판 데이터:', res.data);
-         setMyFreePosts(res.data || [])
-        })
+      .then(res => setMyFreePosts(res.data || []))
       .catch(() => setMyFreePosts([]));
   }, [userId]);
 
-  const handleManageStore = () => setView("manageStore");
+  const handleManageStore = () => setView && setView("manageStore");
 
   // 🔥 활동 내역 클릭 시 모달 띄우기
   const handleGoToDetail = (type, data) => {
@@ -104,7 +95,7 @@ export default function Mypage({ setView }) {
     return text.length > 20 ? text.substring(0, 20) + "..." : text;
   };
 
-  // 🔥 반드시 data: r/p/f로 원본데이터를 넣어준다!
+  // 내 활동 내역 통합 배열
   const myActivities = [
     ...myReviews.map(r => ({
       id: r.id,
@@ -147,7 +138,7 @@ export default function Mypage({ setView }) {
         마이페이지
       </Typography>
 
-      {/* 나의 활동 내역 */}
+      {/* 활동 내역 & 찜한 가게 */}
       <Box sx={{
         width: '100%',
         maxWidth: 'lg',
@@ -155,6 +146,7 @@ export default function Mypage({ setView }) {
         flexDirection: { xs: 'column', md: 'row' },
         gap: { xs: 3, md: 3 }
       }}>
+        {/* 나의 활동 내역 */}
         <Box sx={{ flex: 1 }}>
           <SectionPaper title="나의 활동 내역" icon={<RateReviewIcon />}>
             {myActivities.length > 0 ? (
@@ -182,25 +174,9 @@ export default function Mypage({ setView }) {
             )}
           </SectionPaper>
         </Box>
-
-        {/* 찜한 가게(더미 데이터 그대로) */}
+        {/* 찜한 가게는 FavoriteStoresSection만 사용 */}
         <Box sx={{ flex: 1 }}>
-          <SectionPaper title="찜한 가게" icon={<FavoriteIcon />}>
-            {favorites.length > 0 ? (
-              <List disablePadding>
-                {favorites.map((fav, index) => (
-                  <React.Fragment key={fav.id}>
-                    <ListItem sx={{ px: 0 }}>
-                      <ListItemText primary={fav.name} />
-                    </ListItem>
-                    {index < favorites.length - 1 && <Divider component="li" sx={{ my: 1 }} />}
-                  </React.Fragment>
-                ))}
-              </List>
-            ) : (
-              <Typography variant="body2" color="text.secondary">찜한 가게가 없습니다.</Typography>
-            )}
-          </SectionPaper>
+          <FavoriteStoresSection userId={userId} />
         </Box>
       </Box>
 
